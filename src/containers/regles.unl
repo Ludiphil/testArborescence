@@ -1,0 +1,4740 @@
+TABLE=regles
+COLONNES=module,nordr,libreg,decmin,decmax,codmin,codmax,matmin,matmax,datmin,datmax,interp,nivreg,periodic,source,catmin,catmax,calcpass,calcpres,comregl,debug,theme,util,nordrstd,applic,logiciel,calcfutur,valvar1,valvar2,valvar3,valvar4,valvar5,valvar6,nomvar1,nomvar2,nomvar3,nomvar4,nomvar5,nomvar6,jourr,moisr,jsemainer,groupe,priorite,nbexec,listdecl,contraint,calcprev,typegest
+A-BONI|15|Absence Cong� Bonifi�|||||||||3|AP_CAL|J|BONI_AN=BONI_P;
+
+DAT_BONI_C=DT;
+|||O|N|MODULE BONI|N|BONI|O|15|2|C|O|||||||||||||||||||||O||
+ABATCP|12|Abattement sur CP|||||||||3|AV_CAL|J|si (ABS_CP_C+ABS_CP>=(CTABATSCP) et CTCALCCP=="O" et CTABATVCP>0)
+{
+ ABS_CP_C=-ABS_CP;
+ RET_CP=RET_CP+CTABATVCP;
+ CP_P_A=CP_P_A+CTABATVCP;
+ CP_S_A=CP_S_A-CTABATVCP;
+anom(525);
+};|||O|N|MODULE CP|N|CP|O|12||C|O|||||||||||||||||||||O||
+ABATRTT|32|Abatement sur RTT|||||||||3|AV_CAL|J|si (ABS_RTT_C+ABS_RTT>=CTABATSRTT et CTCALCRTT=="O" et CTABATVRTT>0)
+{
+ ABS_RTT_C=-ABS_RTT;
+ RTT_P_A=RTT_P_A+CTABATVRTT;
+ RTT_S_A=RTT_S_A-CTABATVRTT;
+anom(524);
+};|||O|N|MODULE RTT|N|RTT|O|32||C|O|||||||||||||||||||||O||
+ABSCONSE|35|Absences Cons�cutives Trav.|||||||||3|REGINT|J|
+tantque(DatJour<=DATEF)
+
+{
+
+ GE_horairej(MATRIC,DatJour,HorJour);
+
+ si(HorJour!=-1)
+
+ {
+TheoJour=0;
+hormatin="N";
+horsoir="N";
+  si(JexPersDat(MATRIC, DatJour,1,"tab_jex")==0)
+
+  {
+
+GE_LectureDC(HorJour,DatJour,"TDU_HFE");
+TheoJour=TDU_HFE.TDU;
+hormatin=TDU_HFE.HORMATIN;
+horsoir=TDU_HFE.HORSOIR;
+
+   si(TheoJour>0 et hormatin=="O" et horsoir=="O")
+
+   {
+
+    TheoJA=TheoJA+100;
+
+   };
+
+   si (TheoJour>0 et ((hormatin=="O" et horsoir=="N") ou (hormatin=="N" et horsoir=="O")))
+
+   {
+
+    TheoJA=TheoJA+50;
+
+   };
+
+  };
+
+ };
+
+ DatJour=DatJour+1;
+
+};|||O|N|MODULE ANO
+|N|ANO ABS|O|35||C|O|||||||||||||||||||||O||
+ABSDRCP|10|Abs sur droit CP|||||||||3|AV_CAL|J|si (CTCALCCP=="O" et TDU>0 et NB_AP>0)
+
+{
+
+ _i=0;
+
+ tantque (_i<NB_AP)
+
+ {
+
+  CpAbs=TAB_AP[_i].DROICONGE;
+
+  si (CpAbs=="N")
+
+  {
+
+   ABS_CP=ABS_CP+(hm(TAB_AP[_i].TEMPS)/hm(TDU))*100;
+
+  };
+
+  si (CpAbs=="P")
+
+  {
+
+   ABS_CP=ABS_CP+((hm(TAB_AP[_i].TEMPS)/hm(TDU))*100)/2;
+
+  };
+
+  _i=_i+1;
+
+ };
+
+};|||O|N|MODULE CP|N|CP|O|10|0|C|O|||||||||||||||||||||O||
+ABSDRRTT|30|Abs sur droit RTT|||||||||3|AV_CAL|J|si (CTCALCRTT=="O" et TDU>0 et NB_AP>0)
+
+{
+
+ _i=0;
+
+ tantque (_i<NB_AP)
+
+ {
+
+  RttAbs=TAB_AP[_i].DROITRTT;
+
+  si (RttAbs=="N")
+
+  {
+
+   ABS_RTT=ABS_RTT+(hm(TAB_AP[_i].TEMPS)/hm(TDU))*100;
+
+  };
+
+  si (RttAbs=="P")
+
+  {
+
+   ABS_RTT=ABS_RTT+((hm(TAB_AP[_i].TEMPS)/hm(TDU))*100)/2;
+
+  };
+
+  _i=_i+1;
+
+ };
+
+};|||O|N|MODULE RTT|N|RTT|O|30|0|C|O|||||||||||||||||||||O||
+ABSOUVRA|40|Absences Cons�cutives Ouvrable|||||||||3|REGINT|J|tantque(DatJour<=DATEF)
+
+{
+
+ si(vraijour(DatJour)<7)
+
+ {
+
+  TheoJA=TheoJA+100;
+
+ };
+
+ DatJour=DatJour+1;
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|40|0|C|O|||||||||||||||||||||O||
+ABSOUVRE|45|Absences Cons�cutives Ouvr�es|||||||||3|REGINT|J|tantque(DatJour<=DATEF)
+
+{
+
+ si(vraijour(DatJour)<6)
+
+ {
+
+  TheoJA=TheoJA+100;
+
+ };
+
+ DatJour=DatJour+1;
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|45|0|C|O|||||||||||||||||||||O||
+ABSPAN|500|Absence sur panier|||||||||3|REGINT|J|absPan=0;
+tempsAbsH=0;
+
+tantque (absPan<NB_AP)
+{
+si ((TAB_AP[absPan].MAVVARCHAR3=="N" ou TAB_AP[absPan].MAVVARCHAR3==NULL) et (TAB_AP[absPan].UNITEDT!="H")){ABS_PAN=1;};
+
+si ((TAB_AP[absPan].MAVVARCHAR3=="N" ou TAB_AP[absPan].MAVVARCHAR3==NULL) et (TAB_AP[absPan].UNITEDT=="H")){tempsAbsH=tempsAbsH+hm(TAB_AP[absPan].TEMPS);};
+
+absPan=absPan+1;
+};
+
+si (tempsAbsH>(hm(TDU)/2)){ABS_PAN=ABS_PAN+1;};|||O|O||N|PAN|O|500||C|N|||||||||||||||||||||N||
+ABSRESTO|500|Absence sur ticket resto|||||||||3|REGINT|J|absResto=0;
+flagRestoM=0;
+flagRestoS=0;
+flagRestoJ=0;
+flagRestoH=0;
+tantque (absResto<NB_AP)
+{
+si (TDU>0){
+si (TAB_AP[absResto].UNITEDT=="M" et (TAB_AP[absResto].MAVVARCHAR1=="N" ou TAB_AP[absResto].MAVVARCHAR1==NULL)){flagRestoM=1; ABS_TRES=1;};
+
+si (TAB_AP[absResto].UNITEDT=="S" et (TAB_AP[absResto].MAVVARCHAR1=="N" ou TAB_AP[absResto].MAVVARCHAR1==NULL)){flagRestoS=1; ABS_TRES=1;};
+
+si (TAB_AP[absResto].UNITEDT=="J" et (TAB_AP[absResto].MAVVARCHAR1=="N" ou TAB_AP[absResto].MAVVARCHAR1==NULL)){flagRestoJ=1; ABS_TRES=1;};
+};
+
+
+
+si (TAB_AP[absResto].UNITEDT=="H" et (tplage(debpause,finpause,"R","A","P")+tplage(debpause,finpause,"R","M","P"))>=(finpause-debpause)){flagRestoH=1;ABS_TRES=1;};
+
+absResto=absResto+1;
+};
+
+|||O|O||N|TREST|O|500||C|N|||||||||||||||||||||N||
+ACTARRA|100|Rslt Act Arrete A|||||||||3|ARRETE|A|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ACTARRH|100|Rslt Act Arrete H|||||||||3|ARRETE|H|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ACTARRM|100|Rslt Act Arrete M|||||||||3|ARRETE|M|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ACTREPA|100|Rslt Act Report A|||||||||3|PERIO_F|A|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ACTREPH|100|Rslt Act Report H|||||||||3|PERIO_F|H|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ACTREPM|100|Rslt Act Report M|||||||||3|PERIO_F|M|ActResPerio();|||O|N||N|RESACT|O|100||C|O|||||||||||||||||||||O||
+ALIMCPTAUJ|1135|Alim cpt jour travaill�|||||||||3|REGINT|J|si (vraijour(DT)==1){LUNTRAV=1+LUNTRAV;};
+si (vraijour(DT)==2){MARTRAV=1+MARTRAV;};
+si (vraijour(DT)==3){MERTRAV=1+MERTRAV;};
+si (vraijour(DT)==4){JEUTRAV=1+JEUTRAV;};
+si (vraijour(DT)==5){VENTRAV=1+VENTRAV;};
+si (vraijour(DT)==6){SAMTRAV=1+SAMTRAV;};
+si (vraijour(DT)==7){DIMTRAV=1+DIMTRAV;};
+|||O|O||N|EQU|O|1135||C|O|||||||||||||||||||||O||
+ANNI-REP|56|Report Anniversaire Pr�c�dent|||||||||3|AP_HOR|J|si (DatAcquisAnn==1 et ANNI_A_D_C>0)
+
+{
+
+ ANNI_P_D_C=ANNI_P_P_C=ANNI_P_S_C=0;
+
+
+
+ ANNI_P_D=ANNI_A_D_C;
+
+ si (ANNI_A_S_C+ANNI_A_S>CTREPMAXANN) {ANNI_P_S=CTREPMAXANN;} sinon {ANNI_P_S=ANNI_A_S_C;};
+
+ ANNI_P_P=ANNI_P_D-ANNI_P_S;
+
+
+
+ ANNI_A_D_C=ANNI_A_P_C=ANNI_A_S_C=0;
+
+};|||O|N|MODULE ANNI|N|ANNI|O|56|0|C|O|||||||||||||||||||||O||
+ANNI_D|100|Calcul droit Cong� Anniversair|||||||||3|AV_CAL|J|si (DatAcquisAnn==1 et CTCALCANN=="O")
+
+{
+
+ VAnni=max(0,anl(DT)-anl(DATANCIEN));
+
+ si (VAnni==anl(DT)) {VAnni=0;};
+
+ 
+
+ _i=0;
+
+ tantque(_i<NB_BDRTABSSEUILS)
+
+ {
+
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="ANNI")
+
+  {
+
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+
+   si (VAnni==_debseuil)
+
+   {
+
+    ANNI_A_D=ANNI_A_D+_valseuil;
+
+    ANNI_A_S=ANNI_A_S+_valseuil;
+
+    _i=NB_BDRTABSSEUILS;
+
+   };
+
+  };
+
+  _i=_i+1;
+
+ };
+
+};|||O|N|MODULE ANNI|N|ANNI|O|100|0|C|O|||||||||||||||||||||O||
+ANNI_RAZ|57|RAZ Anniversaire Pr�c�dente|||||||||3|AP_HOR|J|si (jour(DT)==1 et mois(DT)==CTMRAZANN)
+
+{
+
+ ANNI_P_D_C=0;
+
+ ANNI_P_P_C=0;
+
+ ANNI_P_S_C=0;
+
+};|||O|N|MODULE ANNI|N|ANNI|O|57|0|C|O|||||||||||||||||||||O||
+ANO-1J|10|Anomalie prise > 1J Calendaire|||||||||3|TS_ABS|J|si (DATED!=DATEF)
+
+{
+
+ formate _str,"1j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|10|2|C|O|||||||||||||||||||||O||
+ANO-2J|15|Anomalie prise > 2J Calendaire|||||||||3|TS_ABS|J|si ((DATEF-DATED)>2)
+
+{
+
+ formate _str,"2j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|15|2|C|O|||||||||||||||||||||O||
+ANO-2JA|20|Anomalie prise > 2J Ouvrables|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRA");
+
+
+
+si (TheoJA>200)
+
+{
+
+ formate _str,"2j00 Ouvrables";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|20|2|C|O|||||||||||||||||||||O||
+ANO-2JO|25|Anomalie prise > 2J Ouvr�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRE");
+
+
+
+si (TheoJA>200)
+
+{
+
+ formate _str,"2j00 Ouvr�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|25|2|C|O|||||||||||||||||||||O||
+ANO-2JT|30|Anomalie prise > 2J Travaill�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSCONSE");
+
+
+
+si (TheoJA>200)
+
+{
+
+ formate _str,"2j00 Travaill�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|30|2|C|O|||||||||||||||||||||O||
+ANO-3J|35|Anomalie prise > 3J Calendaire|||||||||3|TS_ABS|J|si ((DATEF-DATED)>3)
+
+{
+
+ formate _str,"3j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|35|2|C|O|||||||||||||||||||||O||
+ANO-3JA|40|Anomalie prise > 3J Ouvrables|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRA");
+
+
+
+si (TheoJA>300)
+
+{
+
+ formate _str,"3j00 Ouvrables";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|40|2|C|O|||||||||||||||||||||O||
+ANO-3JO|45|Anomalie prise > 3J Ouvr�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRE");
+
+
+
+si (TheoJA>300)
+
+{
+
+ formate _str,"3j00 Ouvr�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|45|2|C|O|||||||||||||||||||||O||
+ANO-3JT|50|Anomalie prise > 3J Travaill�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSCONSE");
+
+
+
+si (TheoJA>300)
+
+{
+
+ formate _str,"3j00 Travaill�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|50|2|C|O|||||||||||||||||||||O||
+ANO-4J|55|Anomalie prise > 4J Calendaire|||||||||3|TS_ABS|J|si ((DATEF-DATED)>4)
+
+{
+
+ formate _str,"4j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|55|2|C|O|||||||||||||||||||||O||
+ANO-4JA|60|Anomalie prise > 4J Ouvrables|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRA");
+
+
+
+si (TheoJA>400)
+
+{
+
+ formate _str,"4j00 Ouvrables";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|60|2|C|O|||||||||||||||||||||O||
+ANO-4JO|65|Anomalie prise > 4J Ouvr�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRE");
+
+
+
+si (TheoJA>400)
+
+{
+
+ formate _str,"4j00 Ouvr�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|65|2|C|O|||||||||||||||||||||O||
+ANO-4JT|70|Anomalie prise > 4J Travaill�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSCONSE");
+
+
+
+si (TheoJA>400)
+
+{
+
+ formate _str,"4j00 Travaill�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|70|2|C|O|||||||||||||||||||||O||
+ANO-5J|75|Anomalie prise > 5J Calendaire|||||||||3|TS_ABS|J|si ((DATEF-DATED)>5)
+
+{
+
+ formate _str,"5j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|75|2|C|O|||||||||||||||||||||O||
+ANO-5JA|80|Anomalie prise > 5J Ouvrables|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRA");
+
+
+
+si (TheoJA>500)
+
+{
+
+ formate _str,"5j00 Ouvrables";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|80|2|C|O|||||||||||||||||||||O||
+ANO-5JO|85|Anomalie prise > 5J Ouvr�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRE");
+
+
+
+si (TheoJA>500)
+
+{
+
+ formate _str,"5j00 Ouvr�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|85|2|C|O|||||||||||||||||||||O||
+ANO-5JT|90|Anomalie prise > 5J Travaill�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSCONSE");
+
+
+
+si (TheoJA>500)
+
+{
+
+ formate _str,"5j00 Travaill�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|90|2|C|O|||||||||||||||||||||O||
+ANO-6J|95|Anomalie prise > 6J Calendaire|||||||||3|TS_ABS|J|si ((DATEF-DATED)>6)
+
+{
+
+ formate _str,"6j00 Calendaire";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|95|2|C|O|||||||||||||||||||||O||
+ANO-6JA|100|Anomalie prise > 6J Ouvrables|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRA");
+
+
+
+si (TheoJA>600)
+
+{
+
+ formate _str,"6j00 Ouvrables";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|100|2|C|O|||||||||||||||||||||O||
+ANO-6JO|105|Anomalie prise > 6J Ouvr�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSOUVRE");
+
+
+
+si (TheoJA>600)
+
+{
+
+ formate _str,"6j00 Ouvr�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|105|2|C|O|||||||||||||||||||||O||
+ANO-6JT|110|Anomalie prise > 6J Travaill�s|||||||||3|TS_ABS|J|TheoJA=0;
+
+DatJour=DATED;
+
+TheoJour=0;
+
+
+
+fi_regint("ABSCONSE");
+
+
+
+si (TheoJA>600)
+
+{
+
+ formate _str,"6j00 Travaill�s";
+
+ anom(503,99,99,_str);
+
+};|||O|N|MODULE ANO|N|ANO ABS|O|110|2|C|O|||||||||||||||||||||O||
+ANO-DEPAN|402|Anomalie d�passement annuel|||||||||3|AP_CAL|J|si (D_CIBPACK==0){
+si (D_RegAnnu !=0 et ((CIBAJ+CIBAJ_C!=0) ou (CIBAH+CIBAH_C!=0))) { 
+
+  si (((RANJ+RANJ_C-CIBAJ-CIBAJ_C) > D_MaxDepAnnu*100) et CIBAJ_C>0) {
+    anom(513);
+  };
+
+si (OBLHEBDO>0){
+si (((RANH+RANH_C-CIBAH-CIBAH_C) > D_MaxDepAnnu*(hm(CONTRATH)/(OBLHEBDO/10))) et CIBAH_C>0){
+    anom(513);
+  };
+};
+};
+
+}
+sinon
+{
+
+
+si (jour(DT)==15) {
+  si ((RANH_C+RANH>CIBAH) ou (RANJ_C+RANJ> CIBAJ_C)) {
+   txtAno ="annuelle.";
+   anom(513, 99 , 99 , txtAno);
+  };
+ };
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|402||C|O|||||||||||||||||||||O||
+ANO_515|900|Anomalie si tps trav jour >10h|||||||||3|AP_CAL|J|ano515="";
+formate ano515,"Dur�e quotidienne > � ",D_DURQUOT  using "---#&h&&m";
+
+si (D_ANOTREPO==0){
+si(TVALJ>hm(D_DURQUOT)) {anom(515,99,99,ano515);DEPMAXJ=1;};
+};
+
+si (D_ANOTREPO==1){
+si(TTEJ>hm(D_DURQUOT)) {anom(515,99,99,ano515);DEPMAXJ=1;};
+};
+
+si (D_ANOTREPO==2){
+si((TTEJ+HREXC)>hm(D_DURQUOT)) {anom(515,99,99,ano515);DEPMAXJ=1;};
+};|||O|N||N|TRREP|O|900||C|O|||||||||||||||||||||O||
+ANO_516|901|Anomalie si repos < 11h cons.|||||||||3|AP_CAL|J|ano516="";
+si ((PHOID!=0 et PHOID!=NULL) ou (CYCID!=0 et CYCID!=NULL) ){
+si  (DECID!=0 et DECID!=NULL){
+_deb_pres=2400;
+FIN_PRES=hm(2400);
+br=0;
+tantque(br<NB_PLRES)
+{
+ si(TAB_PLRES[br].ACTVID!="I" et TAB_PLRES[br].ACTVID!="A") {_deb_pres=TAB_PLRES[br].HDEBPL; br=NB_PLRES;};
+ br=br+1;
+};
+br=0;
+tantque(br<NB_PT)
+{
+ si(TAB_PT[br].ES=="e" ou TAB_PT[br].ES=="E") {_deb_pres=min(_deb_pres,TAB_PT[br].HEURE*100+TAB_PT[br].MINUT); br=NB_PT;};
+ br=br+1;
+};
+br=NB_PLRES-1;
+tantque(br>0)
+{
+ si(TAB_PLRES[br].ACTVID!="I" et TAB_PLRES[br].ACTVID!="A") {FIN_PRES=hm(TAB_PLRES[br].HFINPL); br=0;};
+ br=br-1;
+};
+br=NB_PT-1;
+tantque(br>0 et NB_PT>0)
+{
+ si(TAB_PT[br].ES=="s" ou TAB_PT[br].ES=="S") {FIN_PRES=max(FIN_PRES,hm(TAB_PT[br].HEURE*100+TAB_PT[br].MINUT)); br=0;};
+ br=br-1;
+};
+fi_regint("X_516");
+};
+};|||O|N||N|TRREP|O|901||C|O|||||||||||||||||||||O||
+ANO_517|902|Anomalie si amplit. trav. >12h|||||||||3|AP_CAL|J|ano517="";
+formate ano517,"Amplitude quotidienne > � ",D_AMPJOUR  using "---#&h&&m";
+ _deb_pres=_fin_pres=0;
+ br=0;
+ tantque(br<NB_PLRES)
+ {
+  si(TAB_PLRES[br].ACTVID!="I" et TAB_PLRES[br].ACTVID!="A") {_deb_pres=TAB_PLRES[br].HDEBPL; br=NB_PLRES;};
+  br=br+1;
+ };
+ br=NB_PLRES-1;
+ tantque(br>0)
+ {
+  si(TAB_PLRES[br].ACTVID!="I" et TAB_PLRES[br].ACTVID!="A") {_fin_pres=TAB_PLRES[br].HFINPL; br=0;};
+  br=br-1;
+ };
+_amplitude=mh(hm(_fin_pres)-hm(_deb_pres));
+ si(_amplitude>D_AMPJOUR) {anom(517,99,99,ano517);DEPAMPLJ=1;};
+ fi_regint("X_517");|||O|N||N|TRREP|O|902||C|O|||||||||||||||||||||O||
+ANO_518|903|Anomalie si tps trav hebdo>48h|||||||||3|ARRETE|H|ano518="";
+formate ano518,"Temps de travail hebdo > � ",D_MAXHEBDO  using "---#&h&&m";
+si (D_ANOTREPO==0){
+ si(TVALJ>hm(D_MAXHEBDO)) {anom(518,99,99,ano518);DEP48H=1;};
+};
+
+si (D_ANOTREPO==1){
+ si(TTEJ>hm(D_MAXHEBDO)) {anom(518,99,99,ano518);DEP48H=1;};
+};
+
+si (D_ANOTREPO==2){
+ si((TTEJ+HREXC)>hm(D_MAXHEBDO)) {anom(518,99,99,ano518);DEP48H=1;};
+};|||O|N||N|TRREP|O|903||C|O|||||||||||||||||||||O||
+ANO_519|904|Anomalie si moy hrs >44h 12sem|||||||||3|AP_CAL|J|ano519="";
+formate ano519,"Dur�e moyenne de travail sur 12 semaines > � ",D_MAX12S  using "---#&h&&m";
+ si(VRAIJOUR==7)
+ {
+   _nbh12sem=0;
+_nbh12exc=0;
+si (D_ANOTREPO==0){
+   TotalCJ(DT-12*7+1,DT,"TVALJ",_nbh12sem);
+   _nbh12sem=mh((_nbh12sem+TVALJ)/12);
+};
+
+ si (D_ANOTREPO==1){
+   TotalCJ(DT-12*7+1,DT,"TTEJ",_nbh12sem);
+   _nbh12sem=mh((_nbh12sem+TTEJ)/12);
+};
+
+ si (D_ANOTREPO==2){
+   TotalCJ(DT-12*7+1,DT,"TTEJ",_nbh12sem,"HREXC",_nbh12exc);
+   _nbh12sem=mh((_nbh12sem+TTEJ)/12);
+   _nbh12exc=mh((_nbh12exc+HREXC)/12);
+_nbh12sem=_nbh12sem+_nbh12exc;
+};
+
+
+   si(_nbh12sem>D_MAX12S){anom(519,99,99,ano519);DEP44H12=1;};
+ };|||O|N||N|TRREP|O|904||C|O|||||||||||||||||||||O||
+ANO_520|905|Anomalie si repos hebdo<35h|||||||||3|AP_CAL|J|ano520="";
+formate ano520,"Aucun repos hebdomadaire > � ",D_REPHEBDO  using "---#&h&&m";
+_deb_pres=0;
+ br=_flagRH=0;
+ tantque(br<NB_PLRES)
+ {
+  si(TAB_PLRES[br].ACTVID!="I" et TAB_PLRES[br].ACTVID!="A") {_deb_pres=TAB_PLRES[br].HDEBPL; br=NB_PLRES;_flagRH=1;};
+  br=br+1;
+ };
+  si(REPOS_H_C<hm(3500))
+ {
+  si(_flagRH==0) {REPOS_H=hm(2400)-(FIN_PRES_C-hm(2400)); si(FIN_PRES_C==hm(2400)){REPOS_H=hm(2400);};}
+  sinon 
+  {si(FIN_PRES_C!=hm(2400)){REPOS_H=hm(2400)-FIN_PRES_C+hm(_deb_pres);} sinon {REPOS_H=hm(_deb_pres);};
+  };
+ };
+ si(VRAIJOUR==1)
+ {
+  si(((DT>=DDEMARRAGE+2) et (DT>=DENTR+2)) et REPOS_H_C+REPOS_H<hm(D_REPHEBDO)) {anom(520,99,99,ano520);NR35HEBD=1;}
+  REPOS_H_C=REPOS_H=0;
+  };
+ si(_flagRH==1 et (REPOS_H_C+REPOS_H<hm(D_REPHEBDO))){REPOS_H_C=REPOS_H=0;};
+ FIN_PRES_C=0;|||O|N||N|TRREP|O|905||C|O|||||||||||||||||||||O||
+ARRCIBH|300|Arrondi Cible Heures|||||||||3|REGINT|J|si (int(ciblep/100)*100!=ciblep){
+si (D_ARCIBH==1){ciblep=int(ciblep/100)*100;};
+si (D_ARCIBH==2){ciblep=int(ciblep/100)*100+100;};
+si (D_ARCIBH==3)
+{
+si ((ciblep-int(ciblep/100)*100)<50){ciblep=int(ciblep/100)*100;}
+sinon {ciblep=int(ciblep/100)*100+100;};
+};
+};|||O|O||N||O|300||C|O|||||||||||||||||||||N||
+ARRCIBJ|300|Arrondi Cible Jour|||||||||3|REGINT|J|si (D_ARCIBJ==1){CIBAJ=ArrondiJ(CIBAJ,1);};
+si (D_ARCIBJ==2){CIBAJ=ArrondiJ(CIBAJ,2);};
+si (D_ARCIBJ==3){CIBAJ=ArrondiJ(CIBAJ,0);};
+si (D_ARCIBJ==4){CIBAJ=ArrondiDJ(CIBAJ,1);};
+si (D_ARCIBJ==5){CIBAJ=ArrondiDJ(CIBAJ,2);};
+si (D_ARCIBJ==6){CIBAJ=ArrondiDJ(CIBAJ,0);};|||O|O||N||O|300||C|O|||||||||||||||||||||N||
+ARR_EM|111|Arrondi Enfant malade|||||||||3|REGINT|J| si (D_EM_arrondi==0) {Droit_EM=ArrondiDJ(_arrondi,0);};
+ si (D_EM_arrondi==1) {Droit_EM=ArrondiJ(_arrondi,2);};
+ si (D_EM_arrondi==2) {Droit_EM=ArrondiJ(_arrondi,1);};
+ si (D_EM_arrondi==3) {Droit_EM=ArrondiDJ(_arrondi,2);};
+ si (D_EM_arrondi==4) {Droit_EM=ArrondiDJ(_arrondi,1);};|||O|O||N|ENF MALA|O|111||C|O|||||||||||||||||||||O||
+ATTRIBCP|13|Attribution Annuelle des CP|||||||||3|AV_CAL|J|si (CTTYPECP=="A" et CTCALCCP=="O")
+{
+ si ((jour(DT)==1 et mois(DT)==CTMBASCCP) ou DT==DENTR ou DT==DDEMARRAGE)
+ {
+  _i=0;
+
+  si (max(DENTR,DDEMARRAGE)<=_deb_cp)
+  {
+   si (DSORT>=_fin_cp) { _i=CTDROITCP; }
+   sinon { _i=(CTDROITCP/_nbjan)*(DSORT-DT+1); };
+  }
+  sinon
+  {
+   _i=(CTDROITCP/_nbjan)*(min(DSORT,_fin_cp)-DT+1);
+  };
+
+  _arrondi=_i*cp_pract;
+  si (D_CP_arrondi==0) {_arrondi=ArrondiDJ(_arrondi,0);};
+  si (D_CP_arrondi==1) {_arrondi=ArrondiJ(_arrondi,2);};
+  si (D_CP_arrondi==2) {_arrondi=ArrondiJ(_arrondi,1);};
+  si (D_CP_arrondi==3) {_arrondi=ArrondiDJ(_arrondi,2);};
+  si (D_CP_arrondi==4) {_arrondi=ArrondiDJ(_arrondi,1);};
+
+  CP_D_A=CP_D_A+_arrondi;
+  CP_S_A=CP_S_A+_arrondi;
+ 
+  _type="CP"; fi_regint("STOCKE_VAR");
+ };
+};|||O|N|MODULE CP|N|CP|O|13||C|O|||||||||||||||||||||O||
+ATTRIBCP2|13|Attrib Annuelle CP RAZ DENTR|||||||||3|AV_CAL|J|si (CTTYPECP=="A" et CTCALCCP=="O")
+{
+ si ((jour(DT)==1 et mois(DT)==CTMBASCCP) ou DT==DENTR ou DT==DDEMARRAGE)
+ {
+  _i=0;
+
+  si (max(DENTR,DDEMARRAGE)<=_deb_cp)
+  {
+   si (DSORT>=_fin_cp) { _i=CTDROITCP; }
+   sinon { _i=(CTDROITCP/_nbjan)*(DSORT-DT+1); };
+  }
+  sinon
+  {
+   _i=(CTDROITCP/_nbjan)*(min(DSORT,_fin_cp)-DT+1);CP_D_A_C=CP_P_A_C=CP_S_A_C=0;
+  };
+
+  _arrondi=_i*cp_pract;
+  si (D_CP_arrondi==0) {_arrondi=ArrondiDJ(_arrondi,0);};
+  si (D_CP_arrondi==1) {_arrondi=ArrondiJ(_arrondi,2);};
+  si (D_CP_arrondi==2) {_arrondi=ArrondiJ(_arrondi,1);};
+  si (D_CP_arrondi==3) {_arrondi=ArrondiDJ(_arrondi,2);};
+  si (D_CP_arrondi==4) {_arrondi=ArrondiDJ(_arrondi,1);};
+
+  CP_D_A=CP_D_A+_arrondi;
+  CP_S_A=CP_S_A+_arrondi;
+
+  _type="CP"; fi_regint("STOCKE_VAR");
+ };
+};|||O|N|MODULE CP|N|CP|N|13|0|C|O|||||||||||||||||||||O||
+ATTRIRTT|33|Attribution Annuelle des RTT|||||||||3|AV_CAL|J|si (CTTYPERTT=="A" et CTCALCRTT=="O")
+
+{
+
+ si ((jour(DT)==1 et mois(DT)==CTMBASCRTT) ou DT==DENTR ou DT==DDEMARRAGE)
+
+ {
+
+  _i=0;
+
+
+
+  si (max(DENTR,DDEMARRAGE)<=_deb_rtt)
+
+  {
+
+   si (DSORT>=_fin_rtt) { _i=CTDROITRTT; }
+
+   sinon { _i=(CTDROITRTT/_nbjan)*(DSORT-DT+1); };
+
+  }
+
+  sinon
+
+  {
+
+   _i=(CTDROITRTT/_nbjan)*(min(DSORT,_fin_rtt)-DT+1);
+
+  };
+
+
+
+  _arrondi=_i*rtt_pract;
+
+  si (D_RTT_arrond==0) {RTT_D_A=ArrondiDJ(_arrondi,0);};
+
+  si (D_RTT_arrond==1) {RTT_D_A=ArrondiJ(_arrondi,2);};
+
+  si (D_RTT_arrond==2) {RTT_D_A=ArrondiJ(_arrondi,1);};
+
+  si (D_RTT_arrond==3) {RTT_D_A=ArrondiDJ(_arrondi,2);};
+
+  si (D_RTT_arrond==4) {RTT_D_A=ArrondiDJ(_arrondi,1);};
+
+
+
+  RTT_S_A=RTT_S_A+RTT_D_A;
+
+ 
+
+  _type="RTT"; fi_regint("STOCKE_VAR");
+
+ };
+
+};|||O|N|MODULE RTT|N|RTT|O|33|0|C|O|||||||||||||||||||||O||
+AVFINDON|15|Transfert Fin Don|||||||||3|AV_CAL|J|
+si (DON_JR_S_C+DON_JR_S-VREG0>=0)
+{
+  DON_JR_S=DON_JR_S-VREG0;
+  DON_JR_P=DON_JR_P+VREG0;
+} sinon
+{
+  DON_JR_S=DON_JR_S-VREG0;
+  DON_JR_P=DON_JR_P+VREG0;
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+|||O|N||N|Dons|O|15|1|C|O|||||||||||||||||||||O||
+BASCH|31|Basculement des Hors saison|||||||||3|AP_HOR|J|si (mois(DT)==CTMBASCCP et jour(DT)==1)
+{
+ CHS_D_P_C=CHS_P_P_C=CHS_S_P_C=0;
+ 
+ CHS_D_A_C=ArrondiDJ(CHS_D_A_C,2);
+ CHS_S_A_C=ArrondiDJ(CHS_S_A_C,2);
+ CHS_S_P=CHS_S_A_C;
+ CHS_D_P=CHS_S_P;
+ CHS_P_P=CHS_D_P-CHS_S_P;
+
+ CHS_D_A_C=CHS_P_A_C=CHS_S_A_C=0;
+
+ si (CHS_S_P<0) {
+anom(537);
+ };
+};|||O|N|MODULE CP|N|HORSSAIS|O|31||C|O|||||||||||||||||||||O||
+BASCP|31|Basculement des CP|||||||||3|AP_HOR|J|si (mois(DT)==CTMBASCCP et jour(DT)==1 et CTCALCCP=="O")
+{
+ CP_D_P_C=CP_P_P_C=CP_S_P_C=0;
+MAINCP_C=0;REGULCP_C=0;
+ 
+ CP_D_A_C=ArrondiDJ(CP_D_A_C,2);
+ CP_S_A_C=ArrondiDJ(CP_S_A_C,2);
+ si (CP_S_A_C+CP_S_A>CTREPMAXCP) {CP_S_P=CTREPMAXCP;} sinon {CP_S_P=CP_S_A_C;};
+ CP_D_P=CP_S_P;
+ CP_P_P=CP_D_P-CP_S_P;
+
+ CP_D_S_C=ArrondiDJ(CP_D_S_C,2);
+ CP_S_S_C=ArrondiDJ(CP_S_S_C,2);
+ CP_D_A_C=CP_P_A_C=CP_S_A_C=0;
+ CP_D_A=CP_D_S_C;
+ CP_P_A=CP_P_S_C;
+ CP_S_A=CP_S_S_C;
+
+ CP_D_S_C=CP_P_S_C=CP_S_S_C=0;
+ RET_CP_C=0;
+ 
+ si (CP_S_P<0) {
+  CP_D_A= CP_D_A+CP_S_P;
+  CP_P_A=0;
+  CP_S_A=CP_D_A-CP_P_A;
+  
+  CP_P_P=CP_D_P=CP_S_P=0;
+ };
+};|||O|N|MODULE CP|N|CP|O|31||C|O|||||||||||||||||||||O||
+BASRTT|36|Basculement des RTT|||||||||3|AP_HOR|J|si (jour(DT)==1 et mois(DT)==CTMBASCRTT et CTCALCRTT=="O")
+
+{
+
+ RTT_D_P_C=RTT_P_P_C=RTT_S_P_C=0;
+
+MAINRTT_C=0;REGULRTT_C=0;
+
+ RTT_D_A_C=ArrondiDJ(RTT_D_A_C,2);
+
+ RTT_S_A_C=ArrondiDJ(RTT_S_A_C,2);
+
+
+
+ RTT_D_P=RTT_D_A_C;
+
+ si (RTT_S_A_C+RTT_S_A>CTREPMAXRTT) {RTT_S_P=CTREPMAXRTT;} sinon {RTT_S_P=RTT_S_A_C;};
+
+RTT_D_P=RTT_S_P;
+
+
+ RTT_D_A_C=RTT_P_A_C=RTT_S_A_C=0;
+
+};|||O|N|MODULE RTT|N|RTT|O|36||C|O|||||||||||||||||||||O||
+BISSEXTILE|70|Ann�es bissextiles|||||||||3|AP_HOR|J|_nbjan=365;
+
+
+
+si(bissextile(anl(DT))==1){
+
+ _nbjan=366;
+
+};|||O|N||N|CP RTT|O|70|0|C|O|||||||||||||||||||||O||
+BONI_D|62|Droit Aux Cong�s Bonifi�s|||||||||3|AV_CAL|J|si (CTCALCBONI=="O" ou D_CONGBONI==2)
+
+{
+
+ si (jour(DT)==jour(DAT_BONI_C+1) et mois(DT)==mois(DAT_BONI_C+1))
+
+ {
+
+  si (anl(DT)-anl(DAT_BONI_C)>4)
+
+  {
+
+   DAT_BONI_C=DT;
+
+   BONI_D_C=0;
+
+   BONI_P_C=0;
+
+   BONI_S_C=0;
+
+  };
+
+
+
+  si (anl(DT)-anl(DAT_BONI_C)>2)
+
+  {
+
+   BONI_D_C=0; BONI_D=BONI_D+6500;
+
+   BONI_P_C=0;
+
+   BONI_S_C=0; BONI_S=BONI_S+6500;
+
+  };
+
+ };
+
+};|||O|N|MODULE BONI|N|BONI|O|62||C|O|||||||||||||||||||||O||
+C-TEPA|505|Calcul des heures NON TEPA|||||||||3|AP_CAL|J|si (BHebdoHS > hm(1000)) {
+
+    FLAGHS=1;
+
+};
+
+si (TDU==0) {
+
+  FLAGHS=10;
+
+};
+
+
+
+si (cal_hs=="O") {
+
+
+
+  modulo=(FLAGHS+FLAGHS_C)%10;
+
+  si (BHebdoHS+BHebdoHS_C>hm(4800)) {
+
+    NTEPA125=HS125;
+
+    NTEPA150=HS150;
+
+    HS125=HS150=0;
+
+  } sinon {
+
+    si (modulo>0 ou FLAGHS+FLAGHS_C==0) {
+
+      NTEPA125=HS125;
+
+      NTEPA150=HS150;
+
+      HS125=HS150=0;
+
+    };
+
+  };
+
+  FLAGHS_C=FLAGHS=0;
+
+};|||O|N|MODULE HS TEPA
+
+
+
+Alimentation du FLAGHS � 1 pour les jours o� la base hebdo HS d�passe 10H.
+
+Alimentation du FLAGHS � 10 pour les jours o� le temps d� est �gal � 0.
+
+Au final, les cas ne d�clenchant pas le transfert de TEPA vers NON TEPA sont lorsque FLAGHS est une multiple de 10 - FLAGHS modulo 10=0 :
+
+  - au moins une journ�e avec un temps d� � 0
+
+  - pas de journ�e avec la base hebdo HS sup�rieure � 10H.|N|TEPA|N|505|0|C|O|||||||||||||||||||||O||
+CALCCIBLE|52|Recalcul Cible suite 2|||||||||3|REGINT|J|ciblet=0;
+nbjp=0;
+nbjp=(min(dsituf,fin_exercice) - max(dsitud,deb_exercice)) +1 ;
+ciblet=cible*(nbjp/nbJrsPeriode);|||O|O||N||O|52||C|O|||||||||||||||||||||N||
+CANC-REP|61|Report Anciennet� Pr�c�dente|||||||||3|AP_HOR|J|si (DatAcquisAnc==1 et CANC_A_D_C>0)
+
+{
+
+ CANC_P_D_C=CANC_P_P_C=CANC_P_S_C=0;
+
+
+
+ CANC_P_D=CANC_A_D_C;
+
+ si (CANC_A_S_C+CANC_A_S>CTREPMAXANC) {CANC_P_S=CTREPMAXANC;} sinon {CANC_P_S=CANC_A_S_C;};
+
+ CANC_P_P=CANC_P_D-CANC_P_S;
+
+
+
+ CANC_A_D_C=CANC_A_P_C=CANC_A_S_C=0;
+
+};|||O|N|MODULE CANC|N|ANC|O|61|0|C|O|||||||||||||||||||||O||
+CANC_D|90|Calcul droit Cong� Anciennet�|||||||||3|AV_CAL|J|si (DatAcquisAnc==1 et CTCALCANC=="O" et ANNI_A_D==0 et CANC_A_D==0)
+
+{
+
+ VAnc=abs(int((DT-DATANCIEN)/_nbjan));
+
+ _i=0;
+
+ tantque(_i<NB_BDRTABSSEUILS)
+
+ {
+
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="ANC")
+
+  {
+
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+
+   si (VAnc>=_debseuil)
+
+   {
+
+    CANC_A_D=CANC_A_D+_valseuil;
+
+    CANC_A_S=CANC_A_S+_valseuil;
+
+    _i=NB_BDRTABSSEUILS;
+
+   };
+
+  };
+
+  _i=_i+1;
+
+ };
+
+};|||O|N|MODULE CANC|N|ANC|O|90|0|C|O|||||||||||||||||||||O||
+CANC_RAZ|62|RAZ Anciennet� Pr�c�dente|||||||||3|AP_HOR|J|si (jour(DT)==1 et mois(DT)==CTMRAZANC)
+
+{
+
+ CANC_P_D_C=0;
+
+ CANC_P_P_C=0;
+
+ CANC_P_S_C=0;
+
+};|||O|N|MODULE CANC|N|ANC|O|62|0|C|O|||||||||||||||||||||O||
+CFRAC|11|Cong�s de Fractionnement|||||||||3|AP_CAL|J|si (D_GESTFRAC==0){
+si (CTCALCFRA=="O" et mois(DT)==CTMACQFRA et jour(DT)==01 et CFRAC_A_C==0)
+{
+ _i=0;
+ tantque(_i<NB_BDRTABSSEUILS)
+ {
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="FRAC")
+  {
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+   si ((CP_D_A_C+CP_D_A)-(CPEP_C+CPEP)>=_debseuil)
+   {
+    CP_D_A=CP_D_A+(_valseuil*fra_pract);
+    CP_S_A=CP_S_A+(_valseuil*fra_pract);
+    CFRAC_A=_valseuil*fra_pract;
+    _i=NB_BDRTABSSEUILS;
+    CPEP_C=0;
+   };
+  };
+  _i=_i+1;
+ };
+CPEP_C=0;
+};
+}
+sinon
+{
+fi_regint("CFRACOP3");
+};|||O|N|MODULE CFRAC|N|FRACT|O|11||C|O|||||||||||||||||||||O||
+CFRAC2|12|Cong�s de Fractionnement|||||||||3|AP_CAL|J|si (D_GESTFRAC==0){
+si (CTCALCFRA=="O" et CTMACQFRA==0 et CPHP>0)
+{
+ _i=0;
+ tantque(_i<NB_BDRTABSSEUILS)
+ {
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="FRAC")
+  {
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+   si (CPHP_C<_debseuil et (CPHP_C+CPHP)>=_debseuil)
+   {
+    CP_D_A=CP_D_A+(_valseuil*fra_pract);
+    CP_S_A=CP_S_A+(_valseuil*fra_pract);
+    CFRAC_A=_valseuil*fra_pract;
+    _i=NB_BDRTABSSEUILS;
+   };
+  };
+  _i=_i+1;
+ };
+};
+
+si (CTCALCFRA=="O" et CTMACQFRA==0 et mois(DT)==CTMBASCCP et jour(DT)==1)
+{
+ CPHP_C=0;
+};
+}
+sinon
+{
+fi_regint("CFRACOP32");
+};|||O|N|MODULE CFRAC|N|FRACT|O|12||C|O|||||||||||||||||||||O||
+CFRACOP3|11|Cong�s de Fractionnement|||||||||3|REGINT|J|si (CTCALCFRA=="O" et mois(DT)==CTMACQFRA et jour(DT)==01 et CFRAC_A_C==0)
+{
+ _i=0;
+ tantque(_i<NB_BDRTABSSEUILS)
+ {
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="FRAC")
+  {
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+   si ((CP_D_A_C+CP_D_A)-(CPEP_C+CPEP)>=_debseuil)
+   {
+    CHS_D_A=CHS_D_A+(_valseuil*fra_pract);
+    CHS_S_A=CHS_S_A+(_valseuil*fra_pract);
+    CFRAC_A=_valseuil*fra_pract;
+    _i=NB_BDRTABSSEUILS;
+    CPEP_C=0;
+   };
+  };
+  _i=_i+1;
+ };
+};|||O|N||N|FRACT|O|11||C|O|||||||PVCVARCHAR1||||||||||||||O||
+CFRACOP32|12|Cong�s de Fractionnement|||||||||3|REGINT|J|si (CTCALCFRA=="O" et CTMACQFRA==0 et CPHP>0)
+{
+ _i=0;
+ tantque(_i<NB_BDRTABSSEUILS)
+ {
+  si (TAB_BDRTABSSEUILS[_i].TYPDROIT=="FRAC")
+  {
+   _debseuil=TAB_BDRTABSSEUILS[_i].SEUILMIN;
+   _valseuil=TAB_BDRTABSSEUILS[_i].VALDRT;
+   si (CPHP_C<_debseuil et (CPHP_C+CPHP)>=_debseuil)
+   {
+    CHS_D_A=CHS_D_A+(_valseuil*fra_pract);
+    CHS_S_A=CHS_S_A+(_valseuil*fra_pract);
+    CFRAC_A=_valseuil*fra_pract;
+    _i=NB_BDRTABSSEUILS;
+   };
+  };
+  _i=_i+1;
+ };
+};
+
+si (CTCALCFRA=="O" et CTMACQFRA==0 et mois(DT)==CTMBASCCP et jour(DT)==1)
+{
+ CPHP_C=0;
+};|||O|N||N|FRACT|O|12||C|O|||||||PVCVARCHAR1||||||||||||||O||
+CHGUNITEABS|1000|Modif Unit� absence|||||||||3|REGINT|J|si (TABSM==0 et TABSS>0){
+si (TAB_AP[abshorMS].UNITEDT=="J" et TAB_AP[abshorMS].MAVVARCHAR2=="O"){
+  TAB_AP[abshorMS].UNITEDT="S"; TAB_AP[abshorMS].UNITE="S"; TAB_AP[abshorMS].UNITEF="S";
+};
+si (TAB_AP[abshorMS].UNITEDT=="M"){anom(533);};
+};
+
+si (TABSS==0 et TABSM>0){
+si (TAB_AP[abshorMS].UNITEDT=="J" et TAB_AP[abshorMS].MAVVARCHAR2=="O"){
+  TAB_AP[abshorMS].UNITEDT="M";TAB_AP[abshorMS].UNITE="M";TAB_AP[abshorMS].UNITEF="M";
+};
+si (TAB_AP[abshorMS].UNITEDT=="S"){anom(533);};
+};|||O|O||N|ABSHOR|O|1000||C|N|||||||||||||||||||||N||
+CHG_SITU|5|Gestion changement de situatio|||||||||3|AV_CAL|J|fi_regint("LIT_VAR");
+_dt=max(DENTR,DDEMARRAGE);
+si ((CTCALCCP=="O" ou (CTCALCCP!=_ctcalccp et CTCALCCP=="N")) et CTTYPECP=="A" et DT>_dt et DT>_deb_cp)
+{
+si (CTPRACTCP=="O" et (TAUXACTIV!=_tauxactiv ou DSORT!=_dsort)) {_recalcul_cp="O";};
+si (CTDROITCP!=_ctdroitcp) {_recalcul_cp="O";};
+};
+si ((CTCALCRTT=="O" ou (CTCALCRTT!=_ctcalcrtt et CTCALCRTT=="N")) et CTTYPERTT=="A" et DT>_dt et DT>_deb_rtt)
+{
+si (CTPRACTRTT=="O" et (TAUXACTIV!=_tauxactiv ou DSORT!=_dsort)) {_recalcul_rtt="O";};
+si (CTDROITRTT!=_ctdroitrtt ou CTCALCRTT!=_ctcalcrtt) {_recalcul_rtt="O";};
+};
+
+fi_regint("CHG_SITU_2");|||O|N|MODULE CP/RTT|N|CP RTT|O|5||C|O|||||||||||||||||||||O||
+CHG_SITU_2|5|Gestion changement de situatio|||||||||3|REGINT|J|si (_recalcul_cp=="O") {_type="CP"; 
+fi_regint("STOCKE_VAR");};
+si (_recalcul_rtt=="O") {_type="RTT"; fi_regint("STOCKE_VAR");};
+
+si (_recalcul_cp=="O" ou _recalcul_rtt=="O")
+{
+ _fin_cp=min(DSORT, _fin_cp);
+ _fin_rtt=min(DSORT, _fin_rtt);
+ fi_regint("RE_CAL_CP_RT");
+
+};|||O|N|MODULE CP/RTT|N|CP RTT|O|5||C|O|||||||||||||||||||||O||
+CIBAH|48|Recalcul CIBAH|||||||||3|REGINT|J| ret = ConditionTableau("TAB_SIT", MATRIC,"long",0,deb_exercice,"date",0);
+ VideTableau("TAB_SIT");
+NB_SIT = 0;
+RemplitTableau("TAB_SIT", NB_SIT);
+fi_regint("CIBSITU");
+|||O|N||N||O|48||C|O|||||||||||||||||||||O||
+CIBAN|48|Cible annuelle heures et jours|||||||||3|AP_CAL|J|si (D_CIBPACK==0){
+ret=ExisteUnArrete (DT, "U", dateda, datefa);
+si (ret == 1 et D_RegAnnu==2 et DT == dateda) {
+  CIBAH=hm(CONTRATA);
+  CIBAJ=CONTRATA_J*100;
+};
+};
+
+
+si (D_CIBPACK==1){
+GE_LecturePERSVAR(MATRIC,DT-1,"COLLPERSVAR");
+
+si (DT==deb_exercice ou  DT==DENTR ou (DSITUD!=COLLPERSVAR.DSITUD et COLLPERSVAR.DSITUD!=NULL) ou PK_dmajdebut==DT){
+fi_regint("CIBAH");
+} sinon{
+CIBAH=CIBAH_C; CIBAH_C=0;
+CIBAJ=CIBAJ_C; CIBAJ_C=0;};
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|48||C|O|||||||||||||||||||||O||
+CIBSITU|50|Calcul Cible suite|||||||||3|REGINT|J|_i=0;dsitud=0; dsituf=0;
+nomContrat="";
+tantque (_i<NB_SIT){
+ si(TAB_SIT[_i].DSORT!=datei(31121899) et TAB_SIT[_i].DENTR<=fin_exercice et TAB_SIT[_i].DSITUD<=fin_exercice) {
+ dsitud=max(TAB_SIT[_i].DSITUD,deb_exercice);
+ dsituf=min(TAB_SIT[_i].DSITUF,fin_exercice);
+si (PVCVARCHAR1=="N" ou PVCVARCHAR1==NULL){
+ cible=TAB_SIT[_i].CONTRATA;
+} sinon {
+cible=TAB_SIT[_i].CONTRATA_J;
+};
+ fi_regint("CALCCIBLE");
+ ciblep=ciblep+ciblet;
+};
+ _i=_i+ 1;
+};
+si (PVCVARCHAR1=="N" ou PVCVARCHAR1==NULL){
+ciblep=int(ciblep/100)*100+0.6*(ciblep-int(ciblep/100)*100);
+fi_regint("ARRCIBH");
+CIBAH=hm(ciblep);
+CIBAH_C=0;
+} sinon {
+CIBAJ=ciblep*100;
+fi_regint("ARRCIBJ");
+CIBAJ_C=0;
+};
+ciblep=0;|||O|N||N||O|50||C|O|||||||||||||||||||||O||
+CONTBONI|60|Contr�le Cong�s Bonifi�s|||||||||3|AV_CAL|J|si (CTCALCBONI=="O")
+
+{
+
+ si ((BONI_AN_C+BONI_AN)>0 et (CP_P_A_C+CP_P_A)>0)
+
+ {
+
+  anom(504);
+
+ };
+
+};|||O|N|MODULE BONI|N|BONI|O|60||C|O|||||||||||||||||||||O||
+CORELEAVE|10|Hors Travail Cons�cutif|||||||||3|AP_CAL|J|bclAbs=0;
+absM=0;
+absJ=0;
+absS=0;
+txtAno="";
+
+si (TTEJ==0){
+tantque (bclAbs<NB_AP){
+si (TAB_AP[bclAbs].PRTEFF=="N"){
+si (TAB_AP[bclAbs].UNITEDT=="J"){absJ=1;absM=1;absS=1;};
+si (TAB_AP[bclAbs].UNITEDT=="M"){absM=1;};
+si (TAB_AP[bclAbs].UNITEDT=="S"){absS=1;};
+si (TAB_AP[bclAbs].UNITEDT=="M" et hm(TAB_AP[bclAbs].TEMPS)>=TDUJ){absM=1;absS=1;};
+si (TAB_AP[bclAbs].UNITEDT=="S" et hm(TAB_AP[bclAbs].TEMPS)>=TDUJ){absM=1;absS=1;};
+si (TAB_AP[bclAbs].UNITEDT=="H" et hm(TAB_AP[bclAbs].TEMPS)>=TDUJ){absM=1;absS=1;};
+};
+bclAbs=bclAbs+1;
+};
+};
+
+si (TDUJ==0 ou (absM==1 et absS==1) ou absJ==1)
+{ABSCONS=ABSCONS+1;}
+sinon
+{ABSCONS_C=0;};
+
+si (ABSCONS_C+ABSCONS==D_NBJCONS+1)
+{
+formate txtAno,"Non pr�sence d�passant ",D_NBJCONS, " jours";
+anom(534,99,99,txtAno);
+};|||O|O||N|CORE|O|10||C|N|||||||||||||||||||||N||
+CPMOIS|14|Attribution Mensuelle des CP|||||||||3|AV_CAL|J|si (CTTYPECP=="M" et CTCALCCP=="O")
+
+{
+
+ si (djourmois(DT)==DT)
+
+ {
+
+  si (mois(DT)==mois(DENTR) et anl(DT)==anl(DENTR))
+
+  {
+
+   CP_D_S=((CTDROITCP/12)*cp_pract)*(((jour(DT)-jour(DENTR))+1)/jour(DT));
+
+  }
+
+  sinon
+
+  {
+
+   CP_D_S=CP_D_S+((CTDROITCP/12)*cp_pract);
+
+  };
+
+  CP_S_S=CP_S_S+CP_D_S;
+
+ };
+
+};|||O|N|MODULE CP|N|CP|O|14|0|C|O|||||||||||||||||||||O||
+C_BHN|33|Alimentation cpt BHebdoHN|||||||||3|AP_CAL|J|i = 0;
+
+
+
+tantque (i<NB_AP) {
+
+
+
+  si (TAB_AP[i].PRHS == "H") {
+
+    BHebdoHN = BHebdoHN + hm(TAB_AP[i].TEMPS);
+
+  };
+
+  i=i+1;
+
+};|||O|N|HEURES NORMALES|N|HN|O|33|0|C|O|||||||||||||||||||||O||
+C_DONPTCOMM|71|M�J P/S Don de Jour|||||||||3|AV_CAL|J|DON_JR_P=DON_JR_P+VREG0;
+DON_JR_S=DON_JR_S-VREG0;|||O|O|MODULE DON|N|Dons|O|71|1|C|O|||||||||||||||||||||O||
+C_FRAC|10|Alimentation p�riode �t�/hiver|||||||||3|TS_ABS|J|si (mois(DT)>=CTMDECP et mois(DT)<CTMDHCP) {
+ si (UNITEDT=="J")
+ {
+  CPbasc=CPbasc+100;
+ };
+ si (UNITEDT=="M" ou UNITEDT=="S")
+ {
+  CPbasc=CPbasc+50;
+ };
+};|||O|N||N|FRACT|O|10|2|C|O|||||||||||||||||||||O||
+C_FRAC2|10|Alimentation p�riode �t�/hiver|||||||||3|AP_CAL|J|si (TDU>0)
+{
+ si (mois(DT)>=CTMDECP et mois(DT)<CTMDHCP) {
+   si (CPbasc>0) {
+     CPEP=CPbasc;
+   } sinon {
+     CPEP=CP_P_P+CP_P_A;
+   };
+ } sinon {
+   si (CPbasc > 0) {
+     CPHP=CPbasc;
+    } sinon {
+     si (D_FRAC_RELIQ==1){
+        CPHP=CP_P_P+CP_P_A;
+     } sinon {
+     CPHP=CP_P_A;
+     };
+    };
+ };
+};|||O|N||N|FRACT|O|10|2|C|O|||||||||||||||||||||O||
+DCVEST|46|D�bit-Cr�dit: Temps vestiaire|||||||||3|AP_CAL|J|DCHAB=DCHAB+hm(tpsVestiaire);|||O|O||N|VEST|O|46||C|O|||||||||||||||||||||O||
+DEBDMAJ|50|1er jour Calcul|||||||||3|AP_PERS|J|PK_dmajdebut=DMAJ+1;|||O|O||N||O|50||C|O|||||||||||||||||||||O||
+DEBIT|311|Anomalie de D�bit>Maximum|||||||||3|AP_CAL|J|si (DEBCRE_C<(0-hm(D_DebitMaxi)) et jour(DT)==1)
+
+{
+
+ anom(500);
+
+};|||O|N|MODULE DEBIT|N|DEB CRE|O|311|0|C|O|||||||||||||||||||||O||
+DECLBADG|50|D�cl variable Vestiaire|||||||||3|DEBUT|J|short bouclpt;
+long tpsVestiaire;
+short heureBdg;
+short heureBdgS;
+short flagVestiaire;|||O|O||N|VEST|O|50||C|O|||||||||||||||||||||O||
+DECLCORE|50|D�claration Variable Coreleave|||||||||3|DEBUT|J|short bclAbs;
+short absM;
+short absJ;
+short absS;
+|||O|O||N|CORE|O|50||C|O|||||||||||||||||||||O||
+DECLDON|5|Declaration variable|||||||||3|DEBUT|J|short oblh;
+short heurehebdo;
+char messDonCA(50);
+char mesDon3112(100);|||O|O||N|Dons|O|5||C|O|||||||||||||||||||||O||
+DONCA|8|Dons de Cong� anciennet�|||||||||3|AP_CAL|J|si (CANC_A_S_C+CANC_A_S-VREG0>=0)
+{
+  CANC_A_S=CANC_A_S-VREG0;
+  CANC_A_P=CANC_A_P+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+
+|||O|O||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+DONCB|8|Dons de Cong� bonifi�|||||||||3|AP_CAL|J|si (BONI_S_C+BONI_S-VREG0>=0)
+{
+  BONI_S=BONI_S-VREG0;
+  BONI_P=BONI_P+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+
+|||O|O||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+DONCET|8|Dons de CET|||||||||3|AP_CAL|J|si (CET_S_C+CET_S-VREG0>=0)
+{
+  CET_S=CET_S-VREG0;
+  CET_P=CET_P+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+
+|||O|N||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+DONCP|8|Dons de CP|||||||||3|AP_CAL|J|si (OBLHEBDO==NULL ou OBLHEBDO==0){
+oblh=500;
+} sinon {
+oblh=OBLHEBDO*10;};
+
+si (CP_S_A_C+CP_S_A-VREG0>=0)
+{
+  CP_S_A=CP_S_A-VREG0;
+  CP_P_A=CP_P_A+VREG0;
+  NBCPDON=NBCPDON+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+
+
+si (anl(DT)!=anl(TODAY) et TYPSAISIECTR=="CTRRG"){anom(528);};
+si (oblh<(NBCPDON_C+NBCPDON))
+{
+formate messDonCA, " Vous ne pouvez donner que ", oblh using "&j&&" , " jours de CA." 
+anom(526,99,99,messDonCA);
+};
+|||O|N||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+DONRC|15|Dons de Repos Compensateur|||||||||3|AP_CAL|J|aujourdhui=datejour();
+si (OBLHEBDO==NULL ou OBLHEBDO==0){
+oblh=500;
+} sinon {
+oblh=OBLHEBDO*10;};
+
+si (CONTRATH==NULL ou CONTRATH==0){
+heurehebdo=hm(3500);
+} sinon {
+heurehebdo=hm(CONTRATH);
+};
+
+si (D_DonRC==1){
+
+si (CP_S_A_C+CP_S_A-VREG0>0)
+{
+  CP_S_A=CP_S_A-VREG0;
+  CP_P_A=CP_P_A+VREG0;
+  NBCPDON=NBCPDON+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+} sinon { anom(527);};
+
+si (anl(DATER)!=anl(aujourdhui)){anom(528);};
+si (oblh<(NBCPDON_C+NBCPDON)){anom(526);};
+|||O|O||N|Dons|N|15|1|C|O|||||||||||||||||||||O||
+DONRTT|8|Dons de RTT|||||||||3|AP_CAL|J|si (D_DonRTT==1){
+si (RTT_S_A_C+RTT_S_A-VREG0>=0)
+{
+  RTT_S_A=RTT_S_A-VREG0;
+  RTT_P_A=RTT_P_A+VREG0;
+} sinon
+{
+anom(521);
+};
+
+si ((VREG0%100)>0)
+{anom(522);};
+
+} sinon {
+anom(527);};
+
+si (anl(DT)!=anl(TODAY) et TYPSAISIECTR=="CTRRG"){anom(528);};|||O|O||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+DROIT_E2|100|Droit enfant malade||||||||31/12/2100|3|REGINT|J|EM_D_C=Droit_EM=0;
+EM_S_C=-EM_P_C;
+si ((jour(DT)==1 et mois(DT)==CTMACQEM) ou (DT==DDEMARRAGE)){
+EM_P_C=EM_S_C=0;
+};
+
+_i=0;
+tantque(_i<NB_BDRTABSEM)
+{
+ si (Vnbenf>=TAB_BDRTABSEM[_i].NBENFEM)
+ {
+  si (CTDRTSEM=="O")
+  {
+   Droit_EM=(TAB_BDRTABSEM[_i].VALDRTEM+TAB_BDRTABSEM[_i].VALDRTSEM)*em_pract;
+  }
+  sinon
+  {
+   Droit_EM=TAB_BDRTABSEM[_i].VALDRTEM*em_pract;
+  };
+
+ };
+ _i=_i+1;
+};
+
+|||O|N|MODULE EM|N|ENF MALA|O|100||C|O|||||||||||||||||||||O||
+DROIT_EM|70|Calcul du droit enfant malade|||||||||3|AV_CAL|J|
+ Vnbenf=_i=0;
+si (NB_PERSENF>0){
+ tantque (_i<NB_PERSENF)
+ {
+  Vdnaisenf=TAB_PERSENF[_i].DNAISENF;
+  Vhandicap=TAB_PERSENF[_i].HANDICAP;
+  Vcharge=TAB_PERSENF[_i].CHARGE;
+  Vdeces=TAB_PERSENF[_i].DDECES;
+  
+  si (Vcharge=="O" et Vdnaisenf<=DT et (Vdeces>DT ou Vdeces==NULL) et (Vdnaisenf>EM_Date ou (CTHANDIEM=="O" et Vhandicap=="O")))
+  {
+   Vnbenf=Vnbenf+1;
+  };
+  _i=_i+1;
+ };
+
+StockeVar("Vnbenfhier",Vnbenf);
+si ((jour(DT)==1 et mois(DT)==CTMACQEM) ou ((DT==DENTR ou Vnbenfhier!=Vnbenf ou DT==DDEMARRAGE) et Vnbenf>0) et CTCALCEM=="O")
+{
+ 
+ fi_regint("DROIT_E2");
+
+ _arrondi=Droit_EM;
+ fi_regint("ARR_EM");
+
+
+ EM_D=EM_D+Droit_EM;
+ EM_S=EM_S+Droit_EM;
+};
+};|||O|N|MODULE EM|N|ENF MALA|O|70||C|O|||||||||||||||||||||O||
+DR_CE|110|Initialisation du droit CE|||||||||3|AV_CAL|J|si ((jour(DT)==1 ou DT==DENTR ou DT==DDEMARRAGE ou CE_D_C==0) et CTCALCDEL=="O")
+{
+ CE_D_C=CE_P_C=CE_S_C=0;
+ CE_D=CE_S=hm(CTDROITCE);
+};
+
+si (CTCALCDEL=="N" ou CTCALCDEL==NULL)
+{
+ CE_D_C=CE_P_C=CE_S_C=0;
+};|||O|N|MODULE CE|N|CE|O|110|0|C|O|||||||||||||||||||||O||
+DR_CHSCT|115|Initialisation du droit CHSCT|||||||||3|AV_CAL|J|si ((jour(DT)==1 ou DT==DENTR ou DT==DDEMARRAGE ou CHSCT_D_C==0) et CTCALCDEL=="O")
+{
+ CHSCT_D_C=CHSCT_P_C=CHSCT_S_C=0;
+ CHSCT_D=CHSCT_S=hm(CTDROITCHS);
+};
+
+si (CTCALCDEL=="N" ou CTCALCDEL==NULL)
+{
+ CHSCT_D_C=CHSCT_P_C=CHSCT_S_C=0;
+};|||O|N|MODULE CHSCT|N|CHSCT|O|115|0|C|O|||||||||||||||||||||O||
+DR_DP|120|Initialisation du droit DP|||||||||3|AV_CAL|J|si ((jour(DT)==1 ou DT==DENTR ou DT==DDEMARRAGE ou DP_D_C==0) et CTCALCDEL=="O")
+{
+ DP_D_C=DP_P_C=DP_S_C=0;
+ DP_D=DP_S=hm(CTDROITDP);
+};
+
+si (CTCALCDEL=="N" ou CTCALCDEL==NULL)
+{
+ DP_D_C=DP_P_C=DP_S_C=0;
+};|||O|N|MODULE DP|N|DP|O|120|0|C|O|||||||||||||||||||||O||
+DR_SY|125|Initialisation du droit SY|||||||||3|AV_CAL|J|si ((jour(DT)==1 ou DT==DENTR ou DT==DDEMARRAGE ou SY_D_C==0) et CTCALCDEL=="O")
+{
+ SY_D_C=SY_P_C=SY_S_C=0;
+ SY_D=SY_S=hm(CTDROITSY);
+};
+
+si (CTCALCDEL=="N" ou CTCALCDEL==NULL)
+{
+ SY_D_C=SY_P_C=SY_S_C=0;
+};|||O|N|MODULE SY|N|SYND|O|125|0|C|O|||||||||||||||||||||O||
+DSHORSSAI|50|Alim. D/S Hors Saison|||||||||3|AV_CAL|J|CHS_D_A_C=CHS_S_A_C=0;
+CHS_D_A=CHS_D_A+VREG0;
+CHS_S_A=CHS_S_A+VREG0;
+
+|||O|N||N|HORSSAIS|O|50|1|C|O|||||||||||||||||||||O||
+ECRASECUMUL|100|�crase le compteur cumul�|||||||||3|AV_ABS|J|numcpt=NREG0-2000;
+
+formate cmd,"C",numcpt using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt using ">>>>&","C","=VREG0;";
+fi_execute(cmd);
+|||O|N||N||O|100|1|C|O|||||||||||||||||||||O||
+ECRASECUMULH|100|�crase le compteur cumul� hm|||||||||3|AV_ABS|J|numcpt=NREG0-2000;
+cmd="";
+formate cmd,"C",numcpt using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt using ">>>>&","C","=hm(VREG0);";
+fi_execute(cmd);
+|||O|N||N||O|100|1|C|O|||||||||||||||||||||O||
+ECRASEDS|102|�crase les D/S cumul�s|||||||||3|AV_ABS|J|numcpt1=NREG0-2000;
+numcpt2=NREG0-2000+1;
+numcpt3=NREG0-2000+2;
+cmd="";
+valreg3=0;
+
+SQLCODE;
+
+fi_sel ("select NOMCPT,TYPCPT into ?,? from COMPTEURS where NOCOMPT=?",cmd,typcpt,numcpt1);
+
+si (typcpt==1)
+{valreg3=hm(VREG0);};
+
+si (typcpt==2)
+{valreg3=hc(VREG0);};
+
+si (typcpt==3)
+{valreg3=VREG0;};
+
+formate cmd,"C",numcpt1 using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt3 using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt1 using ">>>>&","=valreg3;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt3 using ">>>>&","=","C",numcpt1 using ">>>>&","-(","C",numcpt2 using ">>>>&","C","+","C",numcpt2 using ">>>>&",");";
+fi_execute(cmd);
+|||O|N||N||N|102|1|C|O|||||||||||||||||||||O||
+ECRASEPS|104|�crase les P/S cumul�s|||||||||3|AV_ABS|J|numcpt1=NREG0-2000-1;
+numcpt2=NREG0-2000;
+numcpt3=NREG0-2000+1;
+cmd="";
+valreg4=0;
+
+SQLCODE;
+
+fi_sel ("select NOMCPT,TYPCPT into ?,? from COMPTEURS where NOCOMPT=?",cmd,typcpt,numcpt1);
+
+si (typcpt==1)
+{valreg4=hm(VREG0);};
+
+si (typcpt==2)
+{valreg4=hc(VREG0);};
+
+si (typcpt==3)
+{valreg4=VREG0;};
+
+formate cmd,"C",numcpt2 using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt3 using ">>>>&","C","=0;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt2 using ">>>>&","=valreg4;";
+fi_execute(cmd);
+
+formate cmd,"C",numcpt3 using ">>>>&","=","C",numcpt1 using ">>>>&","+","C",numcpt1 using ">>>>&","C","-","C",numcpt2 using ">>>>&",";";
+fi_execute(cmd);
+|||O|N||N||N|104|1|C|O|||||||||||||||||||||O||
+EQUITE|10|Compteur �quit�s|||||||||3|AP_CAL|J|nbheurej1 =0;
+nbheurej2=0;
+
+si(D_MODEEQ ==0 ou HDREF<=HFREF){
+si (TDU==0){NBREPOS=NBREPOS+1;};
+si (TTEJ>0){JTRAV=JTRAV+1;fi_regint("ALIMCPTAUJ");
+si (jfe=="O"){FERTRAV=FERTRAV+1;};};
+};
+
+si(HDREF>HFREF et D_MODEEQ ==1){
+
+nbheurej1 =tplage(hm(HDREF), hm(2400),"R","P","*")+tplage(hm(HDREF), hm(2400),"R","M","*");
+nbheurej2 =tplage(0, hm(HFREF),"R","P","*")+tplage(hm(HDREF), hm(2400),"R","M","*");
+si (nbheurej2>0){CPTTRAV_J=1;};
+si ((nbheurej1>0) ou (nbheurej1==0 et CPTTRAV_C ==1)){fi_regint("ALIMCPTAUJ");JTRAV=JTRAV+1;si (jfe=="O"){FERTRAV=FERTRAV+1;};};
+si (nbheurej1==0 et CPTTRAV_C==0){NBREPOS=NBREPOS+1;};
+};
+CPTTRAV_C =0;
+
+|||O|O||N|EQU|O|10||C|O|||||||||||||||||||||O||
+EQUITHOR|20|Equites type horaire|||||||||3|AP_CAL|J|si ((TAB_DC.NATURE=="MAT" ou HORMATIN=="O") et TTEJ>0)
+{NBMAT=NBMAT+1;};
+ si (TAB_DC.NATURE=="SOIR" et TTEJ>0)
+{NBSOIR=NBSOIR+1;};
+si ((TAB_DC.NATURE=="APM" ou HORSOIR=="O") et TTEJ>0)
+{NBAPREM=NBAPREM+1;};|||O|N||N|EQU|O|20||C|N|||||||||||||||||||||N||
+FINDON|10|Fin Don|||||||||3|AP_CAL|J|si ((DON_JR_S_C+DON_JR_S)>0 et jour(DT)==31 et mois(DT)==12 et MATRIC!=D_PotCommun)
+{
+formate mesDon3112," Merci de transf�rer ", DON_JR_S_C+DON_JR_S using "--&j&&" , " jours de dons non consomm�s.";
+anom(523,99,99,mesDon3112);
+};
+
+
+|||O|N||N|Dons|O|10||C|O|||||||||||||||||||||O||
+GESTABSHOR|150|Gestion unit� absence/horaire|||||||||3|AV_ABS|J|abshorMS=0;
+si (D_ABSHORMS==1){
+si (NB_AP>0){
+tantque (abshorMS<NB_AP){
+si (TAB_AP[abshorMS].MAVVARCHAR2=="O"){
+si (TAB_AP[abshorMS].CONDCUMDPS=="1" ou TAB_AP[abshorMS].CONDCUMDPS==NULL){fi_regint("CHGUNITEABS");};
+si (TAB_AP[abshorMS].CONDCUMDPS=="2" et vraijour(DT)<=5){fi_regint("CHGUNITEABS");};
+si (TAB_AP[abshorMS].CONDCUMDPS=="3" et vraijour(DT)<=6){fi_regint("CHGUNITEABS");};
+si (TAB_AP[abshorMS].CONDCUMDPS=="5" et TDU>0){fi_regint("CHGUNITEABS");};
+};
+abshorMS=abshorMS+1;
+};
+};
+};
+|||O|N||N|ABSHOR|O|150||C|O|||||||||||||||||||||N||
+HORPANIER|20|Horaire de travail Panier|||||||||3|AP_CAL|J|si (TDU>0 et DCVARINT1!=0){HORPAN=1;};|||O|O||N|PAN|O|20||C|O|||||||||||||||||||||N||
+HOTRAV|15|Horaire de travail �ligible TR|||||||||3|AP_CAL|J|si (TDU>0 et HOUV!=FPF1 et DPF2!=HFERM et FPF1!=DPF2 et DCVARCHAR5!="N"){HORTRAV=1;};|||O|O||N|TREST|O|15||C|N|||||||||||||||||||||N||
+HSCONST|505|HS constat�es|||||||||3|AP_CAL|J|si (HS125>0)
+
+{
+
+ formate _str,"hs 125 :",mh(HS125) using "---#&h&&m"," et hs 150 :",mh(HS150) using "---#&h&&m";
+
+ anom(501,99,99,_str);
+
+};|||O|N|MODULE HS|N|HS|O|505|0|C|O|||||||||||||||||||||O||
+I-ANNI|55|Initialisation Variables ANNI|||||||||3|AP_HOR|J|AnnNb=0;
+
+DatAcquisAnn=0;
+
+
+
+si (CTCALCANN=="O" et CTMACQANN==0)
+
+{
+
+ si (jour(DT)==jour(DATANCIEN) et mois(DT)==mois(DATANCIEN))
+
+ {
+
+  DatAcquisAnn=1;
+
+ };
+
+}
+
+sinon
+
+{
+
+ si (jour(DT)==1 et mois(DT)==CTMACQANN)
+
+ {
+
+  DatAcquisAnn=1;
+
+ };
+
+};|||O|N|MODULE ANNI|N|ANNI|O|55|0|C|O|||||||||||||||||||||O||
+I-CANC|60|Initialisation Variables CANC|||||||||3|AP_HOR|J|DatAcquisAnc=0;
+
+
+
+si (CTCALCANC=="O" et CTMACQANC==0)
+
+{
+
+ si (jour(DT)==jour(DATANCIEN) et mois(DT)==mois(DATANCIEN))
+
+ {
+
+  DatAcquisAnc=1;
+
+ };
+
+}
+
+sinon
+
+{
+
+ si (jour(DT)==1 et mois(DT)==CTMACQANC)
+
+ {
+
+  DatAcquisAnc=1;
+
+ };
+
+};|||O|N|MODULE CANC|N|ANC|O|60||C|O|||||||||||||||||||||O||
+I-CFRAC|40|Initialisation Variables CFRAC|||||||||3|AP_HOR|J|CPbasc=0;
+
+fra_pract=1;
+
+
+
+si (CTPRACTFRA=="O") {fra_pract=TAUXACTIV/10000;};|||O|N|MODULE CFRAC|N|FRACT|O|40|0|C|O|||||||||||||||||||||O||
+I-CP|30|Initialisation Variables CP|||||||||3|AP_HOR|J|cp_pract=1;
+
+
+
+si (CTPRACTCP=="O") {cp_pract=TAUXACTIV/10000;};|||O|N|MODULE CP|N|CP|O|30|0|C|O|||||||||||||||||||||O||
+I-DATBON|61|M�J Date Prise Cong� Bonifi�|||||||||3|AV_CAL|J|si (D_CONGBONI==1){
+DAT_BONI_C=datei(VREG0);
+} sinon {
+anom(535);
+};|||O|N|MODULE BONI|N|BONI|O|61|1|C|O|||||||||||||||||||||O||
+I-DATBON2|61|M�J Date Prise Cong� Bonifi� 2|||||||||3|AV_CAL|J|si (D_CONGBONI==2 et VARDAT3!=0){
+DAT_BONI_C=VARDAT3;
+};|||O|N|MODULE BONI|N|BONI|O|61||C|O|||||||||||||||||||||O||
+I-DATE|25|Initialise dates CP/RTT|||||||||3|AP_HOR|J|si (mois(DT)>=CTMBASCCP)
+
+{
+
+ _i=1000000+CTMBASCCP*10000+anl(DT); _deb_cp=datei(_i);
+
+ _i=1000000+CTMBASCCP*10000+(anl(DT)+1); _fin_cp=datei(_i)-1;
+
+}
+
+sinon
+
+{
+
+ _i=1000000+CTMBASCCP*10000+(anl(DT)-1); _deb_cp=datei(_i);
+
+ _i=1000000+CTMBASCCP*10000+anl(DT); _fin_cp=datei(_i)-1;
+
+};
+
+
+
+si (mois(DT)>=CTMBASCRTT)
+
+{
+
+ _i=1000000+CTMBASCRTT*10000+anl(DT); _deb_rtt=datei(_i);
+
+ _i=1000000+CTMBASCRTT*10000+(anl(DT)+1); _fin_rtt=datei(_i)-1;
+
+}
+
+sinon
+
+{
+
+ _i=1000000+CTMBASCRTT*10000+(anl(DT)-1); _deb_rtt=datei(_i);
+
+ _i=1000000+CTMBASCRTT*10000+anl(DT); _fin_rtt=datei(_i)-1;
+
+};
+
+
+
+_recalcul_cp="N";
+
+_recalcul_rtt="N";|||O|N|MODULE CP/RTT|N|CP RTT|O|25||C|O|||||||||||||||||||||O||
+I-EM|45|Initialisation Variables EM|||||||||3|AP_HOR|J|em_pract=1;
+Vnbenfhier=0;
+LitVar("Vnbenfhier",Vnbenfhier,DT-1);
+
+
+si (CTPRACTEM=="O") {em_pract=TAUXACTIV/10000;};
+
+
+
+EM_Date=DT-(CTAGELEM*365.25);|||O|N|MODULE EM|N|ENF MALA|O|45||C|O|||||||||||||||||||||O||
+I-RTT|35|Initialisation Variables RTT|||||||||3|AP_HOR|J|rtt_pract=1;
+
+
+
+si (CTPRACTRTT=="O") {rtt_pract=TAUXACTIV/10000;};|||O|N|MODULE RTT|N|RTT|O|35|0|C|O|||||||||||||||||||||O||
+INITCHAR|1|Declaration des variables CHAR|||||||||3|DEBUT|J|char VPTA1(1);
+char VPTA2(1);
+char VPTA3(1);
+
+char jfe(1); char lfe(1);
+
+char _str(200);
+char hormatin(1);
+
+char horsoir(1);
+char cmd(40);
+char txtAno(60);
+
+char ano515(60);
+char ano516(60);
+char ano517(60);
+char ano518(60);
+char ano519(60);
+char ano520(60);
+
+GE_LecturePERSVAR(-1,0,"COLLPERSVAR");
+|||O|O|MODULE CHRONOPACK|N|STD|O|1||C|O|||||||||||||||||||||O||
+INITDATE|1|D�claration des variables DATE|||||||||3|DEBUT|J|date dfinsem;
+date DatJour;
+date _dt;
+date _dd;
+date _df;
+
+date dateda;
+
+date datefa;
+
+date Vdeces;
+
+date deb_exercice;
+date fin_exercice;
+date dsitud;
+date dsituf;|||O|O|MODULE CHRONOPACK|N|STD|O|1||C|O|||||||||||||||||||||O||
+INITFLOAT|1|D�claration variables FLOAT|||||||||3|DEBUT|J|float ciblet;
+float ciblej;
+float ciblep;
+float cible;|||O|O||N||O|1||C|O|||||||||||||||||||||O||
+INITLONG|1|D�claration des variables LONG|||||||||3|DEBUT|J|long VPCPE; long VPDPE;
+long VPCA1; long VPCA2;
+long VPCA3; long VPDA1;
+long VPDA2; long VPDA3;
+
+long p_ctinfval; long p_ctsupval;
+long p_ctinfdeb; long p_ctsupdeb;
+long p_ctinffin; long p_ctsupfin;
+long p_ctinfpou; long p_ctsuppou;
+
+long vtdu; long TheoJA;
+long TheoJour; long HorJour;
+long _debseuil;
+long _valseuil;
+long _arrondi;
+
+long _i;
+
+long TpsAbs;
+
+long modulo;
+long _nbh12sem;
+long _nbh12exc;
+long fracacquis;
+
+long valreg2;
+long valreg3;
+long valreg4;
+
+long PK_dmajdebut;|||O|O|MODULE CHRONOPACK|N|STD|O|1||C|O|||||||||||||||||||||O||
+INITPANIER|10|Variable Panier Repas|||||||||3|DEBUT|J|long absPan;
+long tempsAbsH;
+
+
+|||O|O||N|PAN|O|10||C|O|||||||||||||||||||||O||
+INITRESTO|10|Variable Ticket Restaurant|||||||||3|DEBUT|J|long absResto;
+short flagRestoM;
+short flagRestoS;
+short flagRestoJ;
+short flagRestoH;
+short presMatinee;
+short presAprem;
+long absMoisPrec;
+long debplagmat;
+long finplagmat;
+long debplagaprem;
+long finplagaprem;
+long trestmet3;
+long retmeth3;
+date datedumois;
+date datdebrest;
+date datfinrest;
+long tduresto;
+long heureouv;
+long heureferm;
+long finplg1;
+long debplg2;
+char droittickrest(1);
+long debpause;
+long finpause;
+
+GE_horairej(-1, 0,trestmet3, "MON_HOR");|||O|O||N|TREST|O|10||C|O|||||||||||||||||||||O||
+INITSHOR|1|D�claration des variables SHOR|||||||||3|DEBUT|J|short nbAbsPat;
+short vpecr;
+
+short debut_nuit;
+short fin_nuit;
+
+short ret;
+short j;
+short k;
+short topM;
+short topS;
+short milieu_pause;
+short plageM;
+short plageS;
+short br;
+short _reposQuotidien;
+short _deb_pres;
+short _fin_pres;
+short _amplitude;
+short _flagRH;
+short _first_bdg;
+short _last_bdg;
+short typcpt;
+
+short numcpt;
+short numcpt1;
+short numcpt2;
+short numcpt3;
+short NB_SIT;
+short nbjp;
+short nbJrsPeriode;
+
+short nbheurej1;
+short nbheurej2;|||O|O|MODULE CHRONOPACK|N|STD|O|1||C|O|||||||||||||||||||||O||
+INITSUPAP|2|Declaration TAB_AP|||||||||3|DEBUT|J|short indASuppr;
+short doubleboucle;|||O|O||N|TABAP|O|2||C|O|||||||||||||||||||||O||
+INITVAR|44|Initialisation date exercice|||||||||3|AP_CAL|J|nbJrsPeriode=365;
+
+deb_exercice =datei(01010000 + anl(DT));
+fin_exercice=datei(31120000 + anl(DT));
+
+si(bissextile(anl(fin_exercice))==1){
+nbJrsPeriode=366;
+};|||O|O||N||O|44||C|N|||||||||||||||||||||N||
+I_PACK|23|Gestion des NULL|||||||||3|AP_HOR|J|si (CTCALCCP==NULL) {CTCALCCP="N";};
+
+si (CTCALCRTT==NULL) {CTCALCRTT="N";};
+
+si (CTCALCFRA==NULL) {CTCALCFRA="N";};
+
+si (CTCALCANC==NULL) {CTCALCANC="N";};
+
+si (CTCALCANN==NULL) {CTCALCANN="N";};
+
+si (CTCALCEM==NULL) {CTCALCEM="N";};
+
+si (CTDRTSEM==NULL) {CTDRTSEM="N";};
+
+si (CTCALCBONI==NULL) {CTCALCBONI="N";};
+
+
+
+si (TAUXACTIV==NULL)
+
+{
+
+ TAUXACTIV=10000;
+
+ formate _str,"Taux activit�=NULL";
+
+ anom(510,99,99,_str);
+
+};
+
+si (CONTRATH==NULL)
+
+{
+
+ CONTRATH=3500;
+
+ formate _str,"Contrat Hebdo=NULL";
+
+ anom(510,99,99,_str);
+
+};|||O|N|MODULE INIT|N|STD|O|23|0|C|O|||||||||||||||||||||O||
+LIT_ARR|40|Lecture arretes H|||||||||3|DEBUT|J|date debArrH;
+date finArrH;
+GE_LectureDC(-1,0,"TDU_HFE");
+|||O|O|MODULE CHRONOPACK|N|STD|O|40||C|O|||||||||||||||||||||O||
+LIT_CPT1|125|Lecture table compteurs|||||||||3|DEBUT|J|char _numDEBCRE(3);
+
+char _selDEBCRE(200);
+
+_numDEBCRE=_selDEBCRE="";
+
+_i=0;
+
+
+
+fi_sel("select nocompt into ? from compteurs where nomcpt=?",_i,"DEBCRE");
+
+
+
+si (_i>0)
+
+{
+
+ _numDEBCRE=_i;
+
+ formate _selDEBCRE,"fi_sel(\"select C",_numDEBCRE," into ? from comptp where matric=? and dat=? and nordr=3\",_i,MATRIC,_dt);";
+
+};
+
+
+
+si (_selDEBCRE=="") {anom(512,99,99,"compteur DEBCRE non pr�sent");};|||O|O|MODULE CHRONOPACK|N|DEB CRE|N|125||C|O|||||||||||||||||||||O||
+LIT_VAR|80|Lecture var pour CP RTT DT-1|||||||||3|REGINT|J|_ctdroitcp=0;
+
+_ctmaxdroitcp=0;
+
+_ctpractcp=0;
+
+_ctdroitrtt=0;
+
+_ctpractrtt=0;
+
+_tauxactiv=0;
+
+_dsort=0;
+
+
+
+LitVar("_ctdroitcp",_ctdroitcp,DT-1);
+
+LitVar("_ctmaxdroitcp",_ctmaxdroitcp,DT-1);
+
+LitVar("_ctpractcp",_ctpractcp,DT-1);
+
+LitVar("_ctdroitrtt",_ctdroitrtt,DT-1);
+
+LitVar("_ctpractrtt",_ctpractrtt,DT-1);
+
+LitVar("_tauxactiv",_tauxactiv,DT-1);
+
+LitVar("_dsort", _dsort, DT-1);
+
+LitVar("_ctcalcrtt", _ctcalcrtt, DT-1);
+
+si (_ctmaxdroitcp==0 ou _ctmaxdroitcp==NULL){
+
+  _ctmaxdroitcp=CTDROITCP;
+
+};|||O|N|MODULE CP/RTT|N|CP RTT|O|80||C|O|||||||||||||||||||||O||
+MAINTIENCP|30|Maintien CP chgt situation|||||||||3|AV_ABS|J|si (VREG0==0)
+{
+MAINCP=REGULCP_C+REGULCP;
+}
+sinon
+{
+MAINCP=VREG0;
+};
+
+TYPE_ANO[531]="I";|||O|O||N||O|30|1|C|O|||||||||||||||||||||O||
+MAINTIENRTT|45|Maintien RTT chgt situation|||||||||3|AV_ABS|J|si (VREG0==0)
+{
+MAINRTT=REGULRTT_C+REGULRTT;
+}
+sinon
+{
+MAINRTT=VREG0;
+};
+
+TYPE_ANO[532]="I";|||O|O||N||O|45|1|C|O|||||||||||||||||||||O||
+NBRENUIT|430|Nombre de nuits|||||||||3|AP_CAL|J|si (HNUIT>0){
+NBNUIT=NBNUIT+1;
+};|||O|O||N|INTER|O|430||C|O|||||||||||||||||||||O||
+NB_NUIT_RCN|20|Nb de nuits d'au moins 3h00|||||||||3|AP_CAL|J|_i=0;
+
+
+
+si (POINT==0 et TDU>0)
+
+{
+
+ si (HDREF>HFREF)
+
+ {
+
+  _i=tplage(hm(D_hd_rc_nuit),hm(D_hf_rc_nuit+2400),"R","P","*");
+
+  _i=_i+tplage(hm(D_hd_rc_nuit),hm(D_hf_rc_nuit+2400),"R","M","*");
+
+ }
+
+ sinon
+
+ {
+
+  _i=tplage(0,hm(D_hf_rc_nuit),"R","P","*")+tplage(hm(D_hd_rc_nuit),hm(2400),"R","P","*");
+
+  _i=_i+tplage(0,hm(D_hf_rc_nuit),"R","M","*")+tplage(hm(D_hd_rc_nuit),hm(2400),"R","M","*");
+
+ };
+
+};
+
+
+
+si (POINT!=0)
+
+{
+
+ si (HDREF>HFREF)
+
+ {
+
+  _i=tvalide(hm(D_hd_rc_nuit),hm(D_hf_rc_nuit+2400));
+
+ }
+
+ sinon
+
+ {
+
+  _i=tvalide(hm(0),hm(D_hf_rc_nuit))+tvalide(hm(D_hd_rc_nuit),hm(2400));
+
+ };
+
+};
+
+
+
+NUIT_RCN=NUIT_RCN+_i;
+
+
+
+si (NUIT_RCN>=hm(300))
+
+{
+
+ NB_N_RCN=NB_N_RCN+1;
+
+};|||O|N|MODULE RCN|N|RCN|O|20|0|C|O|||||||||||||||||||||O||
+NEW_CP|70|Re-calcul droit CP|||||||||3|REGINT|J|_i=0; _val=0; _drt_cp=0;
+fracacquis=0;
+si (D_RecupFrac=="O" et CHS_D_A_C==0){
+TotalCJ(_deb_cp,_fin_cp,"CFRAC_A",fracacquis);
+_val=_val+fracacquis+CFRAC_A;
+};
+tantque (_i<NB_TAB_DRT)
+{
+ _drt_cp=TAB_DRT[_i]._ctdroitcp;
+ _dd=max(TAB_DRT[_i].DATED,_deb_cp);
+ _df=min(TAB_DRT[_i].DATEF,_fin_cp);
+ si (TAB_DRT[_i]._ctpractcp==0) {_pract=1;} sinon {_pract=TAB_DRT[_i]._tauxactiv/10000;};
+ _val=_val+((_drt_cp/_nbjan)*(_df-_dd+1))*_pract;
+ _i=_i+1;
+};
+si (REGULCP_C+REGULCP>0 et D_RecupCA=="O"){anom(531);};
+_val=_val+MAINCP;
+
+si (D_CP_arrondi==0) {_val=ArrondiDJ(_val,0);};
+si (D_CP_arrondi==1) {_val=ArrondiJ(_val,2);};
+si (D_CP_arrondi==2) {_val=ArrondiJ(_val,1);};
+si (D_CP_arrondi==3) {_val=ArrondiDJ(_val,2);};
+si (D_CP_arrondi==4) {_val=ArrondiDJ(_val,1);};
+CP_D_A=_val-CP_D_A_C;
+CP_S_A=CP_D_A-CP_P_A;|||O|N|MODULE CP/RTT|N|CP RTT|O|70||C|O|||||||||||||||||||||O||
+NEW_RTT|75|Re-calcul droit RTT|||||||||3|REGINT|J|_i=0; _val=0; _drt_rtt=0;
+
+
+
+tantque (_i<NB_TAB_DRT)
+
+{
+
+ _drt_rtt=TAB_DRT[_i]._ctdroitrtt;
+
+ _dd=max(TAB_DRT[_i].DATED,_deb_rtt);
+
+ _df=min(TAB_DRT[_i].DATEF,_fin_rtt);
+
+ si (TAB_DRT[_i]._ctpractrtt==0) {_pract=1;} sinon {_pract=TAB_DRT[_i]._tauxactiv/10000;};
+
+
+
+ _val=_val+((_drt_rtt/_nbjan)*(_df-_dd+1))*_pract;
+
+
+
+ _i=_i+1;
+
+};
+
+si (REGULRTT_C+REGULRTT>0 et D_RecupRTT=="O"){anom(532);};
+_val=_val+MAINRTT;
+
+si (D_RTT_arrond==0) {_val=ArrondiJ(_val,0);};
+
+si (D_RTT_arrond==1) {_val=ArrondiJ(_val,2);};
+
+si (D_RTT_arrond==2) {_val=ArrondiJ(_val,1);};
+
+si (D_RTT_arrond==3) {_val=ArrondiDJ(_val,2);};
+
+si (D_RTT_arrond==4) {_val=ArrondiDJ(_val,1);};
+
+  
+
+RTT_D_A=_val-RTT_D_A_C;
+
+RTT_S_A=RTT_D_A-RTT_P_A;|||O|N|MODULE CP/RTT|N|CP RTT|O|75||C|O|||||||||||||||||||||O||
+NUIT_NB|410|Hrs de nuit pour non badgeant|||||||||3|AP_CAL|J|si (POINT==0 et TDU>0 et ABSENCE<TDUJ)
+{
+ si (HDREF>HFREF)
+ {
+  debut_nuit=max(hm(D_hdnuit),hm(DPF1));
+  fin_nuit=min((hm(D_hfnuit)+hm(2400)),hm(FPF2));
+  HNUIT=HNUIT+(fin_nuit-debut_nuit)-PAUSE; 
+ }
+ sinon
+ {
+  debut_nuit=min(hm(D_hfnuit),hm(DPF1));
+  HNUIT=HNUIT+(hm(D_hfnuit)-debut_nuit);   
+  fin_nuit=max(hm(D_hdnuit),hm(FPF2));
+  HNUIT=HNUIT+(fin_nuit-hm(D_hdnuit));   
+ };
+};|||O|N|MODULE NUIT|N|NUIT|O|410||C|O|||||||||||||||||||||O||
+P01|15|Gestion date de calcul HS|||||||||3|AP_HOR|J|PK_cal_hs="N";
+
+debArrH=0;
+finArrH=0;
+
+si (CODBAS!=NULL et CODBAS!=0)
+ {
+ExisteUnArrete (DT,"H",debArrH, finArrH);
+ si (VRAIJOUR==vraijour(finArrH))
+
+{
+
+ si (HORAIRE.NBJ_CYC>0 et HORAIRE.FCYCLE1)
+
+ {
+
+  si ((HORAIRE.NBJ_CYC%7)==0)
+
+  {
+
+   PK_cal_hs="O"; p_nord=HORAIRE.NBJ_CYC/7;
+
+  }
+
+  sinon
+
+  {
+
+   formate _str,"multiple de 7 jours";
+
+   anom(511,99,99,_str);
+
+  };
+
+ };
+
+
+
+ si (HORAIRE.NBJ_CYC<0)
+
+ {
+
+  si ((HORAIRE.NBJ_PHO%7)==0)
+
+  {
+
+   PK_cal_hs="O"; p_nord=HORAIRE.NBJ_PHO/7;
+
+  }
+
+  sinon
+
+  {
+
+   formate _str,"multiple de 7 jours";
+
+   anom(511,99,99,_str);
+
+  };
+
+ };
+
+};
+
+};|||O|N|MODULE HS
+
+
+
+Calcul des HS � la fin du cycle (anciennement rotation), si le nombre du jour du cycle est un multiple de 7 et lorsque l'on ce trouve sur la derni�re semaine du cycle
+
+ou
+
+Calcul des HS � la fin de la semaine de 7 jours (anciennement programme hebdomadaire), si le nombre de jours du programme horaire est un multiple de 7 et lorsque l'on ce trouve sur le dernier jour de l'arr�t� H|N|HS|O|15||C|O|||||||||||||||||||||O||
+P02|20|Recherche de la base de calcul|||||||||3|AP_HOR|J|VPCPE=PERMCR; VPDPE=PERMDB;
+VPTA1=LIMCAL1; VPCA1=LIMCR1;
+VPTA2=LIMCAL2; VPCA2=LIMCR2;
+VPTA3=LIMCAL3; VPCA3=LIMCR3;
+VPDA1=LIMDB1;
+VPDA2=LIMDB2;
+VPDA3=LIMDB3;
+
+p_ctinfval=CTINFVAL;
+p_ctinfdeb=CTINFDEB;
+p_ctinffin=CTINFFIN;
+p_ctinfpou=CTINFPOU;
+p_ctsupval=CTSUPVAL;
+p_ctsupdeb=CTSUPDEB;
+p_ctsupfin=CTSUPFIN;
+p_ctsuppou=CTSUPPOU;|||O|N|MODULE HS/DC|N|STD|O|20||C|O|||||||||||||||||||||O||
+P312|312|Ecr�tage permanent|||||||||3|AP_CAL|J|si (CODBASDC!=NULL et CODBASDC!=0)
+{
+ vpecr=0;
+ DEBCRE=DEBCRE+DEBCRE_C+DCJ;
+ si (mh(DEBCRE)>VPCPE et VPCPE!=NULL)
+ {
+  vpecr=DEBCRE-hm(VPCPE);
+  EcretCR=vpecr;
+  DEBCRE=hm(VPCPE);
+ };
+ si (mh(DEBCRE)<(VPDPE*-1) et VPDPE!=NULL)
+ {
+  vpecr=abs(DEBCRE)-hm(VPDPE);
+  EcretDB=vpecr*-1;
+  DEBCRE=hm(VPDPE)*-1;
+ };
+ DEBCRE_C=0;
+};|||O|N|MODULE DC|N|DEB CRE|O|312||C|O|||||||||||||||||||||O||
+P314|314|Alimentation des cpts base HV|||||||||3|AP_CAL|J|si (CODBASDC!=NULL et CODBASDC!=0)
+{
+ si(VPCA1!=NULL){ Lim1_DC=DCJ; } sinon { Lim1_DC_C=0; };
+ si(VPCA2!=NULL){ Lim2_DC=DCJ; } sinon { Lim2_DC_C=0; };
+ si(VPCA3!=NULL){ Lim3_DC=DCJ; } sinon { Lim3_DC_C=0; };
+};
+|||O|N|MODULE DC|N|DEB CRE|O|314||C|O|||||||||||||||||||||O||
+P320|320|Ecret arrete N 1 hebdo sans R|||||||||3|ARRETE|H|
+si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|320||C|O|||||||||||||||||||||O||
+P321|321|Ecret. arrete N 1 Bi-Me sans R|||||||||3|ARRETE|Q|
+si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|321||C|O|||||||||||||||||||||O||
+P322|322|Ecret. arrete N 1 mensu sans R|||||||||3|ARRETE|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|322||C|O|||||||||||||||||||||O||
+P323|323|Ecret. arrete N 1 bimes sans R|||||||||3|ARRETE|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|323|0|C|O|||||||||||||||||||||O||
+P324|324|Ecret. arrete N 1 trim sans R|||||||||3|ARRETE|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|324|0|C|O|||||||||||||||||||||O||
+P325|325|Ecret. arrete N 1 seme sans R|||||||||3|ARRETE|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|325|0|C|O|||||||||||||||||||||O||
+P326|326|Ecret arrete N 1 an sans R|||||||||3|ARRETE|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|326|0|C|O|||||||||||||||||||||O||
+P330|330|Ecret. arrete N 2 hebdo sans R|||||||||3|ARRETE|H|
+si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|330||C|O|||||||||||||||||||||O||
+P331|331|Ecret. arrete N 2 Bi-Me sans R|||||||||3|ARRETE|Q|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|331|0|C|O|||||||||||||||||||||O||
+P332|332|Ecret. arrete N 2 Mensu sans R|||||||||3|ARRETE|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|332||C|O|||||||||||||||||||||O||
+P333|333|Ecret. arrete N 2 bimes sans R|||||||||3|ARRETE|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|333|0|C|O|||||||||||||||||||||O||
+P334|334|Ecret. arrete N 2 Trime sans R|||||||||3|ARRETE|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|334|0|C|O|||||||||||||||||||||O||
+P335|335|Ecret. arrete N 2 Semes sans R|||||||||3|ARRETE|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|335|0|C|O|||||||||||||||||||||O||
+P336|336|Ecret. arrete N 2 An sans R|||||||||3|ARRETE|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|336|0|C|O|||||||||||||||||||||O||
+P340|340|Ecret. arrete N 3 hebdo sans R|||||||||3|ARRETE|H|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|340||C|O|||||||||||||||||||||O||
+P341|341|Ecret. arrete N 3 Bi-Me sans R|||||||||3|ARRETE|Q|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|341|0|C|O|||||||||||||||||||||O||
+P342|342|Ecret. arrete N 3 mensu sans R|||||||||3|ARRETE|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|342||C|O|||||||||||||||||||||O||
+P343|343|Ecret arrete N 3 bimes sans R|||||||||3|ARRETE|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|343|0|C|O|||||||||||||||||||||O||
+P344|344|Ecret. arrete N 3 trim sans R|||||||||3|ARRETE|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|344|0|C|O|||||||||||||||||||||O||
+P345|345|Ecret arrete N 3 Semes sans R|||||||||3|ARRETE|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|345|0|C|O|||||||||||||||||||||O||
+P346|346|Ecret. arrete N 3 An sans R|||||||||3|ARRETE|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|346|0|C|O|||||||||||||||||||||O||
+P350|350|Ecr�t arr�t� N 1 Hebdo avec R|||||||||3|PERIO_F|H|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|350||C|O|||||||||||||||||||||O||
+P351|351|Ecr�t. arr�t� N 1 Bi-Me avec R|||||||||3|PERIO_F|Q|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|351|0|C|O|||||||||||||||||||||O||
+P352|352|Ecr�t. arr�t� N 1 Mensu avec R|||||||||3|PERIO_F|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|352||C|O|||||||||||||||||||||O||
+P353|353|Ecr�t. arr�t� N 1 Bimes avec R|||||||||3|PERIO_F|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|353|0|C|O|||||||||||||||||||||O||
+P354|354|Ecr�t. arr�t� N 1 Trim avec R|||||||||3|PERIO_F|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|354|0|C|O|||||||||||||||||||||O||
+P355|355|Ecr�t. arr�t� N 1 Semes avec R|||||||||3|PERIO_F|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|355|0|C|O|||||||||||||||||||||O||
+P356|356|Ecr�t. arr�t� N 1 An avec R|||||||||3|PERIO_F|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR1R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|356|0|C|O|||||||||||||||||||||O||
+P360|360|Ecr�t arr�t� N 2 Hebdo avec R|||||||||3|PERIO_F|H|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|360||C|O|||||||||||||||||||||O||
+P361|361|Ecr�t. arr�t� N 2 Bi-Me avec R|||||||||3|PERIO_F|Q|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|361|0|C|O|||||||||||||||||||||O||
+P362|362|Ecr�t. arr�t� N 2 Mensu avec R|||||||||3|PERIO_F|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|362||C|O|||||||||||||||||||||O||
+P363|363|Ecret. arr�t� N 2 Bimes avec R|||||||||3|PERIO_F|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|363|0|C|O|||||||||||||||||||||O||
+P364|364|Ecr�t. arr�t� N 2 Trime avec R|||||||||3|PERIO_F|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|364|0|C|O|||||||||||||||||||||O||
+P365|365|Ecr�t. arr�t� N 2 Semes avec R|||||||||3|PERIO_F|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|365|0|C|O|||||||||||||||||||||O||
+P366|366|Ecr�t. arr�t� N 2 An avec R|||||||||3|PERIO_F|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR2R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|366|0|C|O|||||||||||||||||||||O||
+P370|370|Ecr�t arr�t� N 3 Hebdo avec R|||||||||3|PERIO_F|H|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|370||C|O|||||||||||||||||||||O||
+P371|371|Ecr�t. arr�t� N 3 Bi-Me avec R|||||||||3|PERIO_F|Q|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|371|0|C|O|||||||||||||||||||||O||
+P372|372|Ecr�t. arr�t� N 3 Mensu avec R|||||||||3|PERIO_F|M|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|372||C|O|||||||||||||||||||||O||
+P373|373|Ecr�t. arr�t� N 3 bimes avec R|||||||||3|PERIO_F|B|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|373|0|C|O|||||||||||||||||||||O||
+P374|374|Ecr�t. arr�t� N 3 trim avec R|||||||||3|PERIO_F|T|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|374|0|C|O|||||||||||||||||||||O||
+P375|375|Ecr�t. arr�t� N 3 Semes avec R|||||||||3|PERIO_F|S|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|375|0|C|O|||||||||||||||||||||O||
+P376|376|Ecr�t. arr�t� N 3 An avec R|||||||||3|PERIO_F|A|si (CODBASDC!=NULL et CODBASDC!=0)
+
+{
+
+ fi_regint("PECR3R");
+
+};|||O|N|MODULE DC|N|DEB CRE|O|376|0|C|O|||||||||||||||||||||O||
+P380|30|Calcul Base HS|||||||||3|AP_CAL|J|si (CODBAS!=NULL et CODBAS!=0)
+{
+ BHebdoHS=BHebdoHS+TVALJ;
+
+ si (NB_AP>0)
+ {
+  _i=0;
+  tantque (_i<NB_AP)
+  {
+   si (TAB_AP[_i].PRHS=="O" ou TAB_AP[_i].PRHS=="T")
+   {
+    BHebdoHS=BHebdoHS+hm(TAB_AP[_i].TEMPS);
+   };
+   _i=_i+1;
+  };
+ };
+
+ _i=HORAIRE.DECID_PHO;
+ si (jfe=="O" et TDU==0 et _i!=0 et _i!=NULL et D_HSUPJF==1)
+ {
+  vtdu=0;
+  GE_LectureDC(HORAIRE.DECID_PHO, datejour(), "TDU_HFE");
+  vtdu=TDU_HFE.TDU;
+  BHebdoHS=BHebdoHS+hm(vtdu);
+ };
+};|||O|N|MODULE HS
+|N|HS|O|30||C|O|||||||||||||||||||||O||
+P381|32|Calcul Base Repos Compensateur|||||||||3|AP_CAL|J|si (CODBAS!=NULL et CODBAS!=0)
+{
+ BHebdoRC=BHebdoRC+TVALJ;
+ si (NB_AP>0)
+ {
+  _i=0;
+  tantque (_i<NB_AP)
+  {
+   si (TAB_AP[_i].PRRC=="O" ou TAB_AP[_i].PRRC=="o")
+   {
+    BHebdoRC=BHebdoRC+hm(TAB_AP[_i].TEMPS);
+   };
+   _i=_i+1;
+  };
+ };
+};|||O|N|MODULE RC|N|RC|O|32||C|O|||||||||||||||||||||O||
+P382|34|Calcul HS|||||||||3|AP_CAL|J|si (PK_cal_hs=="O"){
+
+VPCALHS=BHebdoHS+BHebdoHS_C;_i=0;
+
+TriTableau ("TAB_BHEBDOHS",NB_BHEBDOHS,"DEBHS","FINHS");
+
+tantque (_i<NB_BHEBDOHS){
+
+ _debhs=hm(TAB_BHEBDOHS[_i].DEBHS)*p_nord; _finhs=hm(TAB_BHEBDOHS[_i].FINHS)*p_nord;
+
+ CP_HS=TAB_BHEBDOHS[_i].CPTHS;
+
+ si (VPCALHS>_debhs){
+
+ inst_hs="";_hs=min(_finhs,VPCALHS)-_debhs;
+
+ si (_hs>0){
+
+ formate inst_hs,"C",CP_HS using ">>>","=_hs*(TAB_BHEBDOHS[_i].PAIEHS/100);";fi_execute(inst_hs);
+
+ CONTAHS=CONTAHS+(_hs*(TAB_BHEBDOHS[_i].CONTHS/100));};};
+
+ si (CP_HS==83){
+
+ si (BHebdoHN+BHebdoHN_C>0 et VPCALHS<_debhs){HS100=max(0,VPCALHS+BHebdoHN+BHebdoHN_C-_debhs);};
+
+ si (BHebdoHN+BHebdoHN_C>0 et VPCALHS>=_debhs){HS100=BHebdoHN+BHebdoHN_C;};
+
+};_i=_i+1;};};
+
+|||O|N|MODULE HS|N|HS|O|34||C|O|||||||||||||||||||||O||
+P384|36|Deduction du Repos Comp|||||||||3|AP_CAL|J|si (NB_AP>0 et CODBAS!=NULL et CODBAS!=0)
+
+{
+
+ _i=0;
+
+ tantque (_i<NB_AP)
+
+ {
+
+  si (TAB_AP[_i].DEDUCRC=="O" ou TAB_AP[_i].DEDUCRC=="o")
+
+  {
+
+   HRepoCom=HRepoCom-hm(TAB_AP[_i].TEMPS);
+
+  };
+
+  _i=_i+1;
+
+ };
+
+};|||O|N|MODULE RC|N|RC|O|36||C|O|||||||||||||||||||||O||
+P385|385|Calcul des heures de nuits|||||||||3|AP_CAL|J|si (POINT==1 ou POINT==3)
+
+{
+
+ si (HDREF>HFREF)
+
+ {
+
+  HNUIT=tvalide(hm(D_hdnuit),hm(D_hfnuit+2400));
+
+ }
+
+ sinon
+
+ {
+
+  HNUIT=tvalide(hm(D_hdnuit),hm(2400));
+
+  HNUIT=HNUIT+(tvalide(0,hm(D_hfnuit)));
+
+ };
+
+};|||O|N|MODULE NUIT|N|NUIT|O|385|0|C|O|||||||||||||||||||||O||
+P386|386|Calcul des hrs du dim. et JF|||||||||3|AP_CAL|J|si (jfe=="O" et (VRAIJOUR<7 ou (VRAIJOUR==7 et D_prdimfer==1)))
+{
+ si (D_hdimfer==1)
+ {HFER=TVALJ;}
+ sinon
+ {
+  si (POINT!=0)
+  {HFER=tvalide(hm(HDREF),hm(2400));}
+  sinon
+  {
+   si (HDREF>HFREF et TDU>0) {HFER=hm(2400)-hm(HOUV);}
+   sinon {HFER=hm(TDU);};
+  };
+ };
+}
+sinon 
+{
+ si (VRAIJOUR==7)
+ {
+  si (D_hdimfer==1)
+  {HDIM=TVALJ;}
+  sinon
+  {
+   si(POINT!=0)
+   {HDIM=tvalide(hm(HDREF),hm(2400));}
+   sinon
+   {
+    si (HDREF>HFREF et TDU>0) {HDIM=hm(2400)-hm(HOUV);}
+    sinon {HDIM=hm(TDU);};
+   };
+  };
+ };
+};|||O|N|MODULE DIM FER|N|DIM FER|O|386||C|O|||||||||||||||||||||O||
+P387|387|Calcul veille dim ou JF|||||||||3|AP_CAL|J|si (HDREF>HFREF et TDU>0)
+
+{
+
+ si (lfe=="O" et (vraijour(DT+1)<7 ou (vraijour(DT+1)==7 et D_prdimfer==1)))
+
+ {
+
+  si (D_hdimfer==0)
+
+  {
+
+   si (POINT!=0)
+
+   {
+
+    HFER=HFER+tvalide(0,hm(HFREF));
+
+   }
+
+   sinon
+
+   {
+
+    HFER=HFER+hm(HFERM);
+
+   };
+
+  }; 
+
+ }
+
+ sinon 
+
+ {
+
+  si (vraijour(DT+1)==7)
+
+  {
+
+   si (D_hdimfer==0)
+
+   {
+
+    si (POINT!=0)
+
+    {
+
+     HDIM=HDIM+tvalide(0,hm(HFREF));
+
+    }
+
+    sinon
+
+    {
+
+     HDIM=HDIM+hm(HFERM);
+
+    };
+
+   };
+
+  }; 
+
+ };
+
+};|||O|N|MODULE DIM FER|N|DIM FER|O|387|0|C|O|||||||||||||||||||||O||
+P388|38|Repos Comp.|||||||||3|AP_CAL|J|si (PK_cal_hs=="O"){
+
+si (D_REPOCOM==1){
+si (p_ctinfval==NULL ou p_ctinfdeb==NULL ou  p_ctinffin==NULL ou p_ctinfpou==NULL ou p_ctsupval==NULL ou p_ctsupdeb==NULL ou p_ctsupfin==NULL ou p_ctsuppou==NULL)
+{
+anom(536);
+};
+};
+
+ si (CONTAHS+CONTAHS_C<hm(p_ctinfval) et BHebdoRC+BHebdoRC_C>(hm(p_ctinfdeb)*p_nord) et BHebdoRC+BHebdoRC_C<=(hm(p_ctinffin)*p_nord))
+
+ {
+
+  HRepoCom=HRepoCom+(BHebdoRC+BHebdoRC_C-(hm(p_ctinfdeb)*p_nord))*(p_ctinfpou/100);
+
+ };
+
+
+
+ si (CONTAHS+CONTAHS_C>=hm(p_ctsupval) et BHebdoRC+BHebdoRC_C>(hm(p_ctsupdeb)*p_nord) et BHebdoRC+BHebdoRC_C<=(hm(p_ctsupfin)*p_nord))
+
+ {
+
+  HRepoCom=HRepoCom+(BHebdoRC+BHebdoRC_C-(hm(p_ctsupdeb)*p_nord))*(p_ctsuppou/100);
+
+ };
+
+};|||O|N|MODULE RC|N|RC|O|38||C|O|||||||||||||||||||||O||
+P388a|38|Repos Comp. fonctionnement 2|||||||||3|AP_CAL|J|si (cal_hs=="O")
+
+{
+
+  si (CONTAHS+CONTAHS_C<hm(p_ctinfval) et BHebdoRC+BHebdoRC_C>(hm(p_ctinfdeb)*p_nord) et BHebdoRC+BHebdoRC_C<=(hm(p_ctinffin)*p_nord))
+
+  {
+
+    HRepoCom=HRepoCom+(BHebdoRC+BHebdoRC_C-(hm(p_ctinfdeb)*p_nord))*(p_ctinfpou/100);
+
+   };
+
+
+
+  si (CONTAHS_C>=hm(p_ctsupval))
+
+  {
+
+    si (CONTAHS+CONTAHS_C>=hm(p_ctsupval) et (BHebdoRC+BHebdoRC_C)>(hm(p_ctsupdeb)*p_nord) et (BHebdoRC+BHebdoRC_C)<=(hm(p_ctsupfin)*p_nord))
+
+    {
+
+      HRepoCom=HRepoCom+(BHebdoRC+BHebdoRC_C-(hm(p_ctsupdeb)*p_nord))*(p_ctsuppou/100);
+
+    };
+
+  }
+
+  sinon
+
+  {
+
+    fi_regint("P388a1");
+
+  };
+
+};|||O|N|MODULE RC|N|RC|N|38|0|C|O|||||||||||||||||||||O||
+P388a1|38|Repos Comp. fonct. 2 - suite|||||||||3|REGINT|J|si (CONTAHS+CONTAHS_C>=hm(p_ctsupval) et BHebdoRC+BHebdoRC_C>(hm(p_ctsupdeb)*p_nord) et BHebdoRC+BHebdoRC_C<=(hm(p_ctsupfin)*p_nord))
+
+{
+
+  HRepoCom=HRepoCom+((BHebdoRC+BHebdoRC_C-(hm(p_ctsupdeb)*p_nord))-(hm(p_ctsupval)-CONTAHS_C))*(p_ctsuppou/100);
+
+
+
+  si (BHebdoRC+BHebdoRC_C>(hm(p_ctinfdeb)*p_nord) et BHebdoRC+BHebdoRC_C<=(hm(p_ctinffin)*p_nord))
+
+  {
+
+    HRepoCom=HRepoCom+(BHebdoRC+BHebdoRC_C-HRepoCom-(hm(p_ctinfdeb)*p_nord))*(p_ctinfpou/100);
+
+  };
+
+};|||O|N|MODULE RC|N|RC|N|38|0|C|O|||||||||||||||||||||O||
+PATUNIQ|100|Unicit� pose absence Paternit�|||||||||3|TS_ABS|J|nbAbsPat=0;
+TotalCJ(DT-1, DT-1, "CPAT_P" , nbAbsPat);
+
+si (nbAbsPat==0 et CPAT_P_C>0)
+{
+anom(514);
+};|||O|N||N|CPACK|O|100|2|C|O|||||||||||||||||||||O||
+PAT_DROI|80|Droits aux Cong�s Paternit�|||||||||3|AV_CAL|J|_i=0;
+tantque (_i<NB_PERSENF)
+{
+si (TAB_PERSENF[_i].DADOPT==NULL){
+ Vdnaisenf=TAB_PERSENF[_i].DNAISENF;
+} sinon {
+ Vdnaisenf=TAB_PERSENF[_i].DADOPT;
+};
+ si (Vdnaisenf<=DT et DT>=PAT_DateMin et DT<=PAT_DateMax et Vdnaisenf>=decaldate(DT,"M",-D_PAT_MoisMa)) {PAT_NbNais=PAT_NbNais+1;};
+ _i=_i+1;
+};
+
+si (DT==PAT_DateMin et PAT_NbNais>0)
+{
+ si (PAT_NbNais==1) {CPAT_D=D_PAT_DUniqu;};
+ si (PAT_NbNais>1) {CPAT_D=D_PAT_DMulti;};
+ CPAT_S=CPAT_D;
+ CPAT_D_C=CPAT_P_C=CPAT_S_C=0;
+};|||O|N|MODULE CPAT|N|PATERNI|O|80||C|O|||||||||||||||||||||O||
+PAT_DROI2|80|Droit aux Cong�s Paternit� 2|||||||||3|AP_CAL|J|si (DT>PAT_DateMax et (CPAT_P_C==0 ou (CPAT_P_J==0 et CPAT_S_C>0))) 
+
+{CPAT_D_C=CPAT_P_C=CPAT_S_C=0;};
+
+
+
+si (CPAT_S_C+CPAT_S<0) {anom(502);};|||O|N|MODULE CPAT|N|PATERNI|O|80||C|O|||||||||||||||||||||O||
+PAT_NAIS|50|Recherche Nbre de Naissances|||||||||3|AP_HOR|J|_i=PAT_NbNais=Vdnaisenf=0;
+
+PAT_DateMax=PAT_DateMin=0;
+
+si (NB_PERSENF>0 et (SEXE=="M" ou VARCHAR4=="O"))
+
+{
+
+ tantque (_i<NB_PERSENF)
+
+ {
+si (TAB_PERSENF[_i].DADOPT==NULL){
+  si (TAB_PERSENF[_i].DNAISENF>Vdnaisenf et TAB_PERSENF[_i].DNAISENF<=DT)
+  {
+   Vdnaisenf=TAB_PERSENF[_i].DNAISENF;
+  };
+};
+si (TAB_PERSENF[_i].DADOPT!=NULL){
+  si (TAB_PERSENF[_i].DADOPT>Vdnaisenf et TAB_PERSENF[_i].DADOPT<=DT)
+  {
+   Vdnaisenf=TAB_PERSENF[_i].DADOPT;
+  };
+};
+
+  _i=_i+1;
+
+ };
+
+
+
+ PAT_DateMin=decaldate(Vdnaisenf,"M",D_PAT_MoisMi);
+
+ PAT_DateMax=decaldate(Vdnaisenf,"M",D_PAT_MoisMa);
+
+};|||O|N|MODULE CPAT
+|N|PATERNI|O|50||C|O|||||||||||||||||||||O||
+PECR1|5|Ecretage pour arrete1 sans rep|||||||||3|REGINT|J|si (VPTA1==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA1)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA1);
+
+  EcretCR=vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA1*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA1);
+
+  EcretDB=vpecr*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim1_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|5|0|C|O|||||||||||||||||||||O||
+PECR1R|10|Ecretage arrete1 avec report|||||||||3|REGINT|J|si (VPTA1==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA1)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA1);
+
+  EcretCR=EcretCR_C+vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA1*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA1);
+
+  EcretDB=(abs(EcretDB_C)+vpecr)*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim1_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|10|0|C|O|||||||||||||||||||||O||
+PECR2|15|Ecretage pour arrete2 ss rep|||||||||3|REGINT|J|si (VPTA2==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA2)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA2);
+
+  EcretCR=vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA2*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA2);
+
+  EcretDB=vpecr*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim2_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|15|0|C|O|||||||||||||||||||||O||
+PECR2R|20|Ecretage arrete2 avec report|||||||||3|REGINT|J|si (VPTA2==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA2)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA2);
+
+  EcretCR=EcretCR_C+vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA2*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA2);
+
+  EcretDB=(abs(EcretDB_C)+vpecr)*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim2_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|20|0|C|O|||||||||||||||||||||O||
+PECR3|25|Ecretage pour arrete3 ss rep|||||||||3|REGINT|J|si (VPTA3==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA3)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA3);
+
+  EcretCR=vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA3*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA3);
+
+  EcretDB=vpecr*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim3_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|25|0|C|O|||||||||||||||||||||O||
+PECR3R|30|Ecretage arrete3 avec report|||||||||3|REGINT|J|si (VPTA3==PERIODIC)
+
+{
+
+ si (mh(DEBCRE_C)>VPCA3)
+
+ {
+
+  vpecr=DEBCRE_C-hm(VPCA3);
+
+  EcretCR=EcretCR_C+vpecr;
+
+  DEBCRE=DEBCRE_C-vpecr;
+
+ };
+
+
+
+ si (mh(DEBCRE_C)<(VPDA3*-1))
+
+ {
+
+  vpecr=abs(DEBCRE_C)-hm(VPDA3);
+
+  EcretDB=(abs(EcretDB_C)+vpecr)*-1;
+
+  DEBCRE=(abs(DEBCRE_C)-vpecr)*-1;
+
+ };
+
+ Lim3_DC=0;
+
+};|||O|N|MODULE DC|N|DEB CRE|O|30|0|C|O|||||||||||||||||||||O||
+PLAF_CP|10|Plafond CP si changement situa|||||||||3|AP_CUM|J|si(CP_D_A_C>_ctmaxdroitcp){
+ CP_S_A_J=CP_S_A_J-(CP_D_A_C-_ctmaxdroitcp);
+ CP_D_A_J=CP_D_A_J-(CP_D_A_C-_ctmaxdroitcp);
+
+ CP_S_A_C=CP_S_A_C-(CP_D_A_C-_ctmaxdroitcp);
+ CP_D_A_C=_ctmaxdroitcp;
+};|||O|N||N|CP|N|10|0|C|O|||||||||||||||||||||O||
+PRESHB|5|Pr�sence Hors Bornes|||||||||3|AP_CAL|J|si (POINT==1 ou POINT==3)
+{
+si (HDREF>HFREF)
+{
+HREXCN=tplage(hm(D_hdnuit),hm(D_hfnuit+2400),"R","P","N","T")+tplage(hm(D_hdnuit),hm(D_hfnuit+2400),"R","M","N","T");
+HREXCJ=tplage(hm(HREFD),hm(D_hdnuit),"R","P","N","T")+tplage(hm(HREFD),hm(D_hdnuit),"R","M","N","T")+tplage(hm(D_hfnuit+2400),hm(HREFF+2400),"R","P","N","T")+tplage(hm(D_hfnuit+2400),hm(HREFF+2400),"R","M","N","T");
+}
+sinon
+{
+HREXCJ=tplage(hm(D_hfnuit),hm(D_hdnuit),"R","P","N","T")+tplage(hm(D_hfnuit),hm(D_hdnuit),"R","M","N","T");
+HREXCN=tplage(0,hm(D_hfnuit),"R","P","N","T")+tplage(0,hm(D_hfnuit),"R","M","N","T")+tplage(hm(D_hdnuit),hm(2400),"R","P","N","T")+tplage(hm(D_hdnuit),hm(2400),"R","M","N","T");
+};
+};
+
+HREXC=HREXCJ+HREXCN;|||O|O||N||O|5||C|O|||||||||||||||||||||N||
+PRIMPANIER|30|Prime Panier|||||||||3|AP_CAL|J|si (D_PRIMPANIER>0 et PVCVARCHAR5=="O" et TDU>0 et DCVARINT1!=0){
+
+fi_regint("ABSPAN");
+si (ABS_PAN==0)
+{
+si (HORNUIT=="O"){
+PANNUIT=1;
+} sinon {
+PANJOUR=1;
+};
+};
+
+};
+
+
+
+|||O|N||N|PAN|O|30||C|O|||||||||||||||||||||N||
+PRISEDON|50|V�rification prise don|||||||||3|AP_CAL|J|si (MATRIC!=D_PotCommun)
+{
+si (DON_JR_P_C+DON_JR_P>D_LimPrDon et DON_JR_P_C<(D_LimPrDon+100))
+{
+anom(529);
+};
+
+si (DON_JR_D_C+DON_JR_D==0){anom(530);};
+};|||O|O||N|Dons|O|50|2|C|O|||||||||||||||||||||O||
+R-ANNIDC|101|Reg : Droit/Solde Anniv. Cour|||||||||3|AV_CAL|J|ANNI_A_D=ANNI_A_D+VREG0;
+
+ANNI_A_S=ANNI_A_S+VREG0;|||O|N|MODULE ANNI|N|ANNI|O|101|1|C|O|||||||||||||||||||||O||
+R-ANNIDP|102|Reg : Droit/Solde Anniv. Pr�c|||||||||3|AV_CAL|J|ANNI_P_D=ANNI_P_D+VREG0;
+
+ANNI_P_S=ANNI_P_S+VREG0;|||O|N|MODULE ANNI|N|ANNI|O|102|1|C|O|||||||||||||||||||||O||
+R-ANNIPC|103|Reg : Pris/Solde Anniv. Cour|||||||||3|AV_CAL|J|ANNI_A_P=ANNI_A_P+VREG0;
+
+ANNI_A_S=ANNI_A_S-VREG0;|||O|N|MODULE ANNI|N|ANNI|O|103|1|C|O|||||||||||||||||||||O||
+R-ANNIPP|104|Reg : Pris/Solde Anniv. Pr�c|||||||||3|AV_CAL|J|ANNI_P_P=ANNI_P_P+VREG0;
+
+ANNI_P_S=ANNI_P_S-VREG0;|||O|N|MODULE ANNI|N|ANNI|O|104|1|C|O|||||||||||||||||||||O||
+R-ANNISC|105|Reg : Solde Anniversaire Cour|||||||||3|AV_CAL|J|ANNI_A_S=ANNI_A_S+VREG0;|||O|N|MODULE ANNI|N|ANNI|O|105|1|C|O|||||||||||||||||||||O||
+R-ANNISP|106|Reg : Solde Anniversaire Pr�c|||||||||3|AV_CAL|J|ANNI_P_S=ANNI_P_S+VREG0;|||O|N|MODULE ANNI|N|ANNI|O|106|1|C|O|||||||||||||||||||||O||
+R-BONID|63|M�J D/S Cong� Bonifi�|||||||||3|AV_CAL|J|BONI_D=BONI_D+VREG0;
+
+BONI_S=BONI_S+VREG0;|||O|N|MODULE BONI|N|BONI|O|63|1|C|O|||||||||||||||||||||O||
+R-BONIP|64|M�J P/S Cong� Bonifi�|||||||||3|AV_CAL|J|BONI_P=BONI_P+VREG0;
+
+BONI_S=BONI_S-VREG0;|||O|N|MODULE BONI|N|BONI|O|64|1|C|O|||||||||||||||||||||O||
+R-BONIS|65|M�J Solde Cong� Bonifi�|||||||||3|AV_CAL|J|BONI_S=BONI_S+VREG0;|||O|N|MODULE BONI|N|BONI|O|65|1|C|O|||||||||||||||||||||O||
+R-CANCDC|91|Reg : Droit/Solde Ancien. Cour|||||||||3|AV_CAL|J|CANC_A_D=CANC_A_D+VREG0;
+
+CANC_A_S=CANC_A_S+VREG0;|||O|N|MODULE CANC|N|ANC|O|91|1|C|O|||||||||||||||||||||O||
+R-CANCDP|92|Reg : Droit/Solde Ancien. Pr�c|||||||||3|AV_CAL|J|CANC_P_D=CANC_P_D+VREG0;
+
+CANC_P_S=CANC_P_S+VREG0;|||O|N|MODULE CANC|N|ANC|O|92|1|C|O|||||||||||||||||||||O||
+R-CANCPC|93|Reg : Pris/Solde Ancien. Cour|||||||||3|AV_CAL|J|CANC_A_P=CANC_A_P+VREG0;
+
+CANC_A_S=CANC_A_S-VREG0;|||O|N|MODULE CANC|N|ANC|O|93|1|C|O|||||||||||||||||||||O||
+R-CANCPP|94|Reg : Pris/Solde Ancien. Pr�c|||||||||3|AV_CAL|J|CANC_P_P=CANC_P_P+VREG0;
+
+CANC_P_S=CANC_P_S-VREG0;|||O|N|MODULE CANC|N|ANC|O|94|1|C|O|||||||||||||||||||||O||
+R-CANCSC|95|Reg : Solde Anciennet� Courant|||||||||3|AV_CAL|J|CANC_A_S=CANC_A_S+VREG0;|||O|N|MODULE CANC|N|ANC|O|95|1|C|O|||||||||||||||||||||O||
+R-CANCSP|96|Reg : Solde Anciennet� Pr�c�de|||||||||3|AV_CAL|J|CANC_P_S=CANC_P_S+VREG0;|||O|N|MODULE CANC|N|ANC|O|96|1|C|O|||||||||||||||||||||O||
+R-CET|55|Alimentation manuel du CET|||||||||3|AV_CAL|J|CET_D=CET_D+VREG0;
+
+
+CET_S=CET_S+VREG0;
+
+
+CET_MAN=VREG0;|||O|N|MODULE CET|N|CET|O|55|1|C|O|||||||||||||||||||||O||
+R-CETD|50|M�J D/S Compte Epargne Temps|||||||||3|AV_CAL|J|CET_D=CET_D+VREG0;
+
+CET_S=CET_S+VREG0;|||O|N|MODULE CET|N|CET|O|50|1|C|O|||||||||||||||||||||O||
+R-CETP|51|M�J P/S Compte Epargne Temps|||||||||3|AV_CAL|J|CET_P=CET_P+VREG0;
+
+CET_S=CET_S-VREG0;|||O|N|MODULE CET|N|CET|O|51|1|C|O|||||||||||||||||||||O||
+R-CETS|52|M�J Solde Compte Epargne Temps|||||||||3|AV_CAL|J|CET_S=CET_S+VREG0;|||O|N|MODULE CET|N|CET|O|52|1|C|O|||||||||||||||||||||O||
+R-CIBAH|6|Reg:Maj Cpt cible annuelle H|||||||||3|AV_CAL|J|si (D_RegAnnu != 0) {
+
+  CIBAH = CIBAH + hm(VREG0);
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|6|1|C|O|||||||||||||||||||||O||
+R-CIBAJ|7|Reg:Maj Cpt cible annuelle J|||||||||3|AV_CAL|J|si (D_RegAnnu != 0) {
+
+  CIBAJ = CIBAJ + VREG0;
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|7|1|C|O|||||||||||||||||||||O||
+R-CPABS|11|Reg : Absence sur droit CP|||||||||3|AV_CAL|J|ABS_CP=ABS_CP+VREG0;|||O|N|MODULE CP|N|CP|O|11|1|C|O|||||||||||||||||||||O||
+R-CPATD|81|M�J D/S Cong� Paternit�|||||||||3|AP_CAL|J|CPAT_D=CPAT_D+VREG0;
+
+CPAT_S=CPAT_S+VREG0;|||O|N|MODULE CPAT|N|PATERNI|O|81|1|C|O|||||||||||||||||||||O||
+R-CPATP|82|M�J P/S Cong� Paternit�|||||||||3|AP_CAL|J|CPAT_P=CPAT_P+VREG0;
+
+CPAT_S=CPAT_S-VREG0;|||O|N|MODULE CPAT|N|PATERNI|O|82|1|C|O|||||||||||||||||||||O||
+R-CPATS|83|M�J Solde Cong� Paternit�|||||||||3|AP_CAL|J|CPAT_S=CPAT_S+VREG0;|||O|N|MODULE CPAT|N|PATERNI|O|83|1|C|O|||||||||||||||||||||O||
+R-CPCET|53|Transf. CP vers CET|||||||||3|AV_CAL|J|CetNb=VREG0;
+
+
+
+si (CP_S_P_C+CP_S_P>0)
+
+{
+
+ si ((CP_S_P_C+CP_S_P)-CetNb>=0)
+
+ {
+
+  _i=CetNb; CP_S_P=CP_S_P-_i;CP_P_P=CP_P_P+_i; CetNb=0;
+
+ }
+
+ sinon
+
+ {
+
+  _i=CP_S_P_C+CP_S_P; CP_S_P=CP_S_P-_i;CP_P_P=CP_P_P+_i; CetNb=CetNb-_i;
+
+ };
+
+ CET_CPP=CET_CPP+_i; CET_D=CET_D+_i; CET_S=CET_S+_i;
+
+};
+
+
+
+si (CP_S_A_C+CP_S_A>0 et CetNb>0)
+
+{
+
+ si ((CP_S_A_C+CP_S_A)-CetNb>=0)
+
+ {
+
+  _i=CetNb; CP_S_A=CP_S_A-_i;CP_P_A=CP_P_A+_i; CetNb=0;
+
+ }
+
+ sinon
+
+ {
+
+  _i=CP_S_A_C+CP_S_A; CP_S_A=CP_S_A-_i;CP_P_A=CP_P_A+_i; CetNb=CetNb-_i;
+
+ };
+
+ CET_CPC=CET_CPC+_i; CET_D=CET_D+_i; CET_S=CET_S+_i;
+
+};
+
+
+
+si (CetNb>0)
+
+{
+
+ formate _str,"Valeur maxi = ",(VREG0-CetNb) using "-##&j&&";
+
+ anom(505,99,99,_str);
+
+};|||O|N|MODULE CET|N|CET|O|53|1|C|O|||||||||||||||||||||O||
+R-CPDC|15|Reg : Droit/Solde CP courant|||||||||3|AV_CAL|J|CP_D_A=CP_D_A+VREG0;
+
+CP_S_A=CP_S_A+VREG0;
+
+REGULCP=REGULCP+VREG0;|||O|N|MODULE CP|N|CP|O|15|1|C|O|||||||||||||||||||||O||
+R-CPDP|16|Reg : Droit/Solde CP pr�c�dent|||||||||3|AV_CAL|J|CP_D_P=CP_D_P+VREG0;
+
+CP_S_P=CP_S_P+VREG0;|||O|N|MODULE CP|N|CP|O|16|1|C|O|||||||||||||||||||||O||
+R-CPDS|17|Reg : Droit/Solde CP suivant|||||||||3|AV_CAL|J|CP_D_S=CP_D_S+VREG0;
+
+CP_S_S=CP_S_S+VREG0;|||O|N|MODULE CP|N|CP|O|17|1|C|O|||||||||||||||||||||O||
+R-CPPC|18|Reg : Pris/Solde CP  courant|||||||||3|AV_CAL|J|CP_P_A=CP_P_A+VREG0;
+
+CP_S_A=CP_S_A-VREG0;|||O|N|MODULE CP|N|CP|O|18|1|C|O|||||||||||||||||||||O||
+R-CPPP|19|Reg : Pris/Solde CP pr�c�dent|||||||||3|AV_CAL|J|CP_P_P=CP_P_P+VREG0;
+
+CP_S_P=CP_S_P-VREG0;|||O|N|MODULE CP|N|CP|O|19|1|C|O|||||||||||||||||||||O||
+R-CPPS|20|Reg : Pris/Solde CP  suivant|||||||||3|AV_CAL|J|CP_P_S=CP_P_S+VREG0;
+
+CP_S_S=CP_S_S-VREG0;|||O|N|MODULE CP|N|CP|O|20|1|C|O|||||||||||||||||||||O||
+R-CPSC|21|Reg : Solde CP courant|||||||||3|AV_CAL|J|CP_S_A=CP_S_A+VREG0;|||O|N|MODULE CP|N|CP|O|21|1|C|O|||||||||||||||||||||O||
+R-CPSP|22|Reg : Solde CP pr�c�dent|||||||||3|AV_CAL|J|CP_S_P=CP_S_P+VREG0;|||O|N|MODULE CP|N|CP|O|22|1|C|O|||||||||||||||||||||O||
+R-CPSS|23|Reg : Solde CP suivant|||||||||3|AV_CAL|J|CP_S_S=CP_S_S+VREG0;|||O|N|MODULE CP|N|CP|O|23|1|C|O|||||||||||||||||||||O||
+R-D/S-CE|111|M�J Droit et Solde CE|||||||||3|AV_CAL|J|CE_D=CE_D+hm(VREG0);
+
+CE_S=CE_S+hm(VREG0);|||O|N|MODULE CE|N|CE|O|111|1|C|O|||||||||||||||||||||O||
+R-D/S-CH|116|M�J Droit et Solde CHSCT|||||||||3|AV_CAL|J|CHSCT_D=CHSCT_D+hm(VREG0);
+
+CHSCT_S=CHSCT_S+hm(VREG0);|||O|N|MODULE CHSCT|N|CHSCT|O|116|1|C|O|||||||||||||||||||||O||
+R-D/S-DP|121|M�J Droit et Solde DP|||||||||3|AV_CAL|J|DP_D=DP_D+hm(VREG0);
+
+DP_S=DP_S+hm(VREG0);|||O|N|MODULE DP|N|DP|O|121|1|C|O|||||||||||||||||||||O||
+R-D/S-RCN|130|Mise � jour Droit et solde RCN|||||||||3|AV_CAL|J|RCN_D=RCN_D+hm(VREG0);
+
+RCN_S=RCN_S+hm(VREG0);|||O|N|MODULE RCN|N|RCN|O|130|1|C|O|||||||||||||||||||||O||
+R-D/S-SY|126|M�J Droit et Solde SY|||||||||3|AV_CAL|J|SY_D=SY_D+hm(VREG0);
+
+SY_S=SY_S+hm(VREG0);|||O|N|MODULE SY|N|SYND|O|126|1|C|O|||||||||||||||||||||O||
+R-EMD|71|M�J D/S Enfant Malade|||||||||3|AV_CAL|J|EM_D=EM_D+VREG0;
+
+EM_S=EM_S+VREG0;|||O|N|MODULE EM|N|ENF MALA|O|71|1|C|O|||||||||||||||||||||O||
+R-EMP|72|M�J P/S Enfant Malade|||||||||3|AV_CAL|J|EM_P=EM_P+VREG0;
+
+EM_S=EM_S-VREG0;|||O|N|MODULE EM|N|ENF MALA|O|72|1|C|O|||||||||||||||||||||O||
+R-EMS|73|M�J Solde Enfant Malade|||||||||3|AV_CAL|J|EM_S=EM_S+VREG0;|||O|N|MODULE EM|N|ENF MALA|O|73|1|C|O|||||||||||||||||||||O||
+R-HSD|140|M�J D/S R�cup�ration HS|||||||||3|AV_CAL|J|RHS_D=RHS_D+hm(VREG0);
+
+RHS_S=RHS_S+hm(VREG0);|||O|N|MODULE HS|N|HS|O|140|1|C|O|||||||||||||||||||||O||
+R-HSP|141|M�J P/S R�cup�ration HS|||||||||3|AV_CAL|J|RHS_P=RHS_P+hm(VREG0);
+
+RHS_S=RHS_S-hm(VREG0);|||O|N|MODULE HS|N|HS|O|141|1|C|O|||||||||||||||||||||O||
+R-HSS|142|M�J Solde R�cup�ration HS|||||||||3|AV_CAL|J|RHS_S=RHS_S+hm(VREG0);|||O|N|MODULE HS|N|HS|O|142|1|C|O|||||||||||||||||||||O||
+R-NB_N_RCN|133|Mise � jour du nb de nuits RCN|||||||||3|AV_CAL|J|NB_N_RCN=NB_N_RCN+VREG0;|||O|N|MODULE RCN|N|RCN|O|133|1|C|O|||||||||||||||||||||O||
+R-NUIT_RCN|132|Mise � jour Hrs de nuits RCN|||||||||3|AV_CAL|J|NUIT_RCN=NUIT_RCN+hm(VREG0);|||O|N|MODULE RCN|N|RCN|O|132|1|C|O|||||||||||||||||||||O||
+R-P/S-CE|112|M�J Pris et Solde CE|||||||||3|AV_CAL|J|CE_P=CE_P+hm(VREG0);
+
+CE_S=CE_S-hm(VREG0);|||O|N|MODULE CE|N|CE|O|112|1|C|O|||||||||||||||||||||O||
+R-P/S-CH|117|M�J Pris et Solde CHSCT|||||||||3|AV_CAL|J|CHSCT_P=CHSCT_P+hm(VREG0);
+
+CHSCT_S=CHSCT_S-hm(VREG0);|||O|N|MODULE CHSCT|N|CHSCT|O|117|1|C|O|||||||||||||||||||||O||
+R-P/S-DP|122|M�J Pris et Solde DP|||||||||3|AV_CAL|J|DP_P=DP_P+hm(VREG0);
+
+DP_S=DP_S-hm(VREG0);|||O|N|MODULE DP|N|DP|O|122|1|C|O|||||||||||||||||||||O||
+R-P/S-RCN|131|Mise � jour Pris et solde RCN|||||||||3|AV_CAL|J|RCN_P=RCN_P+hm(VREG0);
+
+RCN_S=RCN_S-hm(VREG0);|||O|N|MODULE RCN|N|RCN|O|131|1|C|O|||||||||||||||||||||O||
+R-P/S-SY|127|M�J Pris et Solde SY|||||||||3|AV_CAL|J|SY_P=SY_P+hm(VREG0);
+
+SY_S=SY_S-hm(VREG0);|||O|N|MODULE SY|N|SYND|O|127|1|C|O|||||||||||||||||||||O||
+R-REAH|8|Reg:Maj Cpt r�alis� annuel H|||||||||3|AV_CAL|J|si (D_RegAnnu != 0) {
+
+  RANH = RANH + hm(VREG0);
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|8|1|C|O|||||||||||||||||||||O||
+R-REAJ|9|Reg:Maj Cpt r�alis� annuel J|||||||||3|AV_CAL|J|si (D_RegAnnu != 0) {
+
+  RANJ = RANJ + VREG0;
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|9|1|C|O|||||||||||||||||||||O||
+R-RTTABS|31|Reg : Absence sur droit RTT|||||||||3|AV_CAL|J|ABS_RTT=ABS_RTT+VREG0;|||O|N|MODULE RTT|N|RTT|O|31|1|C|O|||||||||||||||||||||O||
+R-RTTCET|54|Transf. RTT vers CET|||||||||3|AV_CAL|J|CetNb=VREG0;
+
+
+
+si (RTT_S_P_C+RTT_S_P>0)
+
+{
+
+ si ((RTT_S_P_C+RTT_S_P)-CetNb>=0)
+
+ {
+
+  _i=CetNb; RTT_S_P=RTT_S_P-_i; CetNb=0;
+
+ }
+
+ sinon
+
+ {
+
+  _i=RTT_S_P_C+RTT_S_P; RTT_S_P=RTT_S_P-_i; CetNb=CetNb-_i;
+
+ };
+
+ CET_RTTP=CET_RTTP+_i; CET_D=CET_D+_i; CET_S=CET_S+_i;
+
+};
+
+
+
+si (RTT_S_A_C+RTT_S_A>0 et CetNb>0)
+
+{
+
+ si ((RTT_S_A_C+RTT_S_A)-CetNb>=0)
+
+ {
+
+  _i=CetNb; RTT_S_A=RTT_S_A-_i; CetNb=0;
+
+ }
+
+ sinon
+
+ {
+
+  _i=RTT_S_A_C+RTT_S_A;
+
+  CET_RTTC=RTT_S_A_C+RTT_S_A; RTT_S_A=RTT_S_A-_i; CetNb=CetNb-_i;
+
+ };
+
+ CET_RTTC=CET_RTTC+_i; CET_D=CET_D+_i; CET_S=CET_S+_i;
+
+};
+
+
+
+si (CetNb>0)
+
+{
+
+ formate _str,"Valeur maxi = ",(VREG0-CetNb) using "-##&j&&";
+
+ anom(506,99,99,_str);
+
+};|||O|N|MODULE CET
+
+|N|CET|O|54|1|C|O|||||||||||||||||||||O||
+R-RTTDC|35|Reg : Droit/Solde RTT courant|||||||||3|AV_CAL|J|RTT_D_A=RTT_D_A+VREG0;
+
+RTT_S_A=RTT_S_A+VREG0;
+REGULRTT=REGULRTT+VREG0;|||O|N|MODULE RTT|N|RTT|O|35|1|C|O|||||||||||||||||||||O||
+R-RTTDP|36|Reg : Droit/Solde RTT pr�c�den|||||||||3|AV_CAL|J|RTT_D_P=RTT_D_P+VREG0;
+
+RTT_S_P=RTT_S_P+VREG0;|||O|N|MODULE RTT|N|RTT|O|36|1|C|O|||||||||||||||||||||O||
+R-RTTPC|37|Reg : Pris/Solde RTT courant|||||||||3|AV_CAL|J|RTT_P_A=RTT_P_A+VREG0;
+
+RTT_S_A=RTT_S_A-VREG0;|||O|N|MODULE RTT|N|RTT|O|37|1|C|O|||||||||||||||||||||O||
+R-RTTPP|38|Reg : Pris/Solde RTT pr�c�dent|||||||||3|AV_CAL|J|RTT_P_P=RTT_P_P+VREG0;
+
+RTT_S_P=RTT_S_P-VREG0;|||O|N|MODULE RTT|N|RTT|O|38|1|C|O|||||||||||||||||||||O||
+R-RTTSC|39|Reg : Solde RTT courant|||||||||3|AV_CAL|J|RTT_S_A=RTT_S_A+VREG0;|||O|N|MODULE RTT|N|RTT|O|39|1|C|O|||||||||||||||||||||O||
+R-RTTSP|40|Reg : Solde RTT pr�c�dent|||||||||3|AV_CAL|J|RTT_S_P=RTT_S_P+VREG0;|||O|N|MODULE RTT|N|RTT|O|40|1|C|O|||||||||||||||||||||O||
+R-TEPA|503|Transfert Hrs TEPA => NON TEPA||||||||31/12/2016|3|AP_CAL|J|si(HS150_C+HS150!=0 et HS125_C+HS125!=0){
+
+si(hm(VREG0)<=HS150_C+HS150){NTEPA150=NTEPA150+hm(VREG0);HS150=HS150-hm(VREG0);
+
+}sinon{si(hm(VREG0)>HS150_C+HS150+HS125_C+HS125){
+
+NTEPA150=HS150_C+HS150;NTEPA125=HS125_C+HS125;
+
+HS150=HS150_C=HS125=HS125_C=0;
+
+}sinon{
+
+NTEPA150=NTEPA150+HS150_C+HS150;
+
+NTEPA125=NTEPA125+(hm(VREG0)-(HS150_C+HS150));
+
+HS150=HS150_C=0;HS125=HS125-NTEPA125;};};
+
+}sinon{
+
+si(HS150_C+HS150!=0 et HS125_C+HS125==0){
+
+si(hm(VREG0)<=HS150_C+HS150){
+
+NTEPA150=hm(VREG0);HS150=HS150-hm(VREG0);
+
+}sinon{NTEPA150=NTEPA150+HS150_C+HS150;HS150=HS150_C=0;};
+
+}sinon{
+
+si(HS150_C+HS150==0 et HS125_C+HS125!=0){
+
+si(hm(VREG0)<=HS125_C+HS125){
+
+NTEPA125=hm(VREG0);HS125=HS125-hm(VREG0);
+
+}sinon{NTEPA125=NTEPA125+HS125_C+HS125;HS125=HS125_C=0;};};};};|||O|N|MODULE HS TEPA|N|TEPA|O|503|1|C|O|||||||||||||||||||||O||
+R01|2|Alimentation compteurs de base|||||||||1|AP_CAL|J||||O|O|STD|N|STD|O|2|0|C|O|||||||||||||||||||||O||
+R02_0|0|Lecture base de calcul|||||||||1|AP_HOR|J||||O|N|STD|N|STD|O|0|0|C|O|||||||||||||||||||||O||
+R03_1|10|INIT MISSION AVEC AMPLITUDES|||||||||1|DEBUT|J||||O|O|Les missions avec d�part et sans retour ou sans d�part et avec retour sont cadr�es sur les amplitudes de l'horaire (DA1-FA1,DA2-FA2) 
+--> Si l'on souhaite un recadrage pour que le d�bit/cr�dit ne soit pas n�gatif et dans la mesure du possible = 0 (comportement par d�faut), il ne faut pas utiliser cette r�gle.|N|MISSION|N|10|0|C|O|||||||||||||||||||||O||
+R03_4|15|INIT PAUSE|||||||||1|DEBUT|J||||O|O|Cette r�gle permet de g�rer l'�valuation des compteurs de pause (pause r�elle et pause valid�e), lorsque une mission ou une absence se trouve � l'int�rieur.
+
+
+
+Le temps de pause est automatiquement d�duit du temps de l'absence.|N|MISSION|O|15|0|C|O|||||||||||||||||||||O||
+R101|101|Pointage pendant plage fixe|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|101|0|C|O|||||||||||||||||||||O||
+R102|102|Pause inferieur au minimum|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|102|0|C|O|||||||||||||||||||||O||
+R103|103|Pointage hors site|||||||||1|AP_CAL|J||||O|N||N|STD|O|103|0|C|O|||||||||||||||||||||O||
+R104|104|Temps superieur au maximum|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|104|0|C|O|||||||||||||||||||||O||
+R105|105|Presence non prevue|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|105|0|C|O|||||||||||||||||||||O||
+R107|107|Pas de pointage de sortie|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|107|0|C|O|||||||||||||||||||||O||
+R108|108|Sortie sans entree|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|108|0|C|O|||||||||||||||||||||O||
+R109|109|Entree sans sortie prealable|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|109|0|C|O|||||||||||||||||||||O||
+R110|110|Nombre impair de pointage|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|110|0|C|O|||||||||||||||||||||O||
+R111|111|Sortie pendant une plage fixe|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|111|0|C|O|||||||||||||||||||||O||
+R112|113|Badgeage non pr�vu|||||||||1|AP_CAL|J||||O|N||N|STD|O|113|0|C|O|||||||||||||||||||||O||
+R114|114|Absence non prevue|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|114|0|C|O|||||||||||||||||||||O||
+R115|115|Pointage hors borne|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|115|0|C|O|||||||||||||||||||||O||
+R116|116|Temps validee < a 60% temps du|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|116|0|C|O|||||||||||||||||||||O||
+R120|120|Absence plage fixe|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|120|0|C|O|||||||||||||||||||||O||
+R121|121|Absence en jours multiple|||||||||1|AP_CAL|J||||O|N|STD|N|STD|O|121|0|C|O|||||||||||||||||||||O||
+R122|122|Pr�sence suspecte|||||||||1|AP_CAL|J||||O|N||N|STD|O|122|0|C|O|||||||||||||||||||||O||
+R347|123|Valoris. �v�nement incompl�te|||||||||1|AP_CAL|J||||O|N||N|STD|O|123|0|C|O|||||||||||||||||||||O||
+RAZC43|5|RAZ C43 et C44|||||||||3|AP_HOR|J|si (HORAIRE.DCYCLE1)
+
+{
+
+ BHebdoHS_C=0;
+
+ BHebdoRC_C=0;
+
+ BHebdoHN_C=0;
+
+ HS100_C=0;
+
+};|||O|N|MODULE HS|N|HS|O|5|0|C|O|||||||||||||||||||||O||
+RAZ_DCP|32|Remise a Zero des reliquats CP|||||||||3|AP_HOR|J|si (jour(DT)==1 et mois(DT)==CTMRAZCP)
+
+{
+
+ CP_D_P_C=0;
+
+ CP_P_P_C=0;
+
+ CP_S_P_C=0;
+
+};|||O|N|MODULE CP|N|CP|O|32|0|C|O|||||||||||||||||||||O||
+RCN_D_M1|21|Calcul du droit RCN  m�thode 1|||||||||3|AP_CAL|J|si (NB_N_RCN+NB_N_RCN_C==2)
+
+{
+
+ _i=20;
+
+ si (RCN_D_C+_i>hm(1400)) {_i=max(0,hm(1400)-RCN_D_C);};
+
+ RCN_D=RCN_D+_i;
+
+ RCN_S=RCN_S+_i;
+
+};
+
+
+
+si (NUIT_RCN+NUIT_RCN_C>=hm(25000))
+
+{
+
+ _i=max(0,hm(1400)-(RCN_D+RCN_D_C));
+
+ RCN_D=RCN_D+_i;
+
+ RCN_S=RCN_S+_i;
+
+};|||O|N|MODULE RCN
+
+
+
+M�thode 1
+
+
+
+acquisition de 20 mn de droit RCN � partir de 2 nuits d'au moins 3h00 sur l'arr�t� hebdomadaire
+
+ou
+
+acquition du plafond de 14h00 � partir de 250h00 de nuit RCN sur l'arr�t� annuel
+
+
+
+plafond du droit RCN : 14h00|N|RCN|O|21|0|C|O|||||||||||||||||||||O||
+RCN_D_M2|22|Calcul du droit RCN  m�thode 2|||||||||3|AP_CAL|J|si (VRAIJOUR==FINSEM et (NB_N_RCN+NB_N_RCN_C>=2))
+
+{
+
+ _dd=DT-6;
+
+ _df=DT-1;
+
+ TotalCJ(_dd,_df,"NUIT_RCN",_i);
+
+ RCN_D=RCN_D+_i+NUIT_RCN;
+
+ RCN_S=RCN_S+_i+NUIT_RCN;
+
+};|||O|N|MODULE RCN
+
+
+
+M�thode 2
+
+
+
+acquisition du nombre d'heure de nuits RCN de l'arr�t� hebdomadaire � partir de 2 nuits d'au moins 3h00 sur l'arr�t� hebdomadaire|N|RCN|N|22|0|C|O|||||||||||||||||||||O||
+REA_H|400|R�alis� annuel en heures|||||||||3|AP_CAL|J|si (PVCVARCHAR1=="N" ou PVCVARCHAR1==NULL)
+{
+i=0;
+TpsAbs=0;
+
+tantque (i <NB_AP) {
+  si (TAB_AP[i].VALJAN != "0") {
+    si (TAB_AP[i].UNITE == "J") {
+      si (TAB_AP[i].VALJAN == "1") {
+        TpsAbs=TpsAbs+TDUJ;
+      };
+      si (TAB_AP[i].VALJAN == "2") {
+        TpsAbs=TpsAbs+hm(CONTRATH)/5;
+      };
+      si (TAB_AP[i].VALJAN == "3") {
+        TpsAbs=TpsAbs+hm(CONTRATH)/6;
+      };
+    } sinon {
+      TpsAbs = TpsAbs + hm(TAB_AP[i].TEMPS);
+    };
+  };
+   i=i+1;
+};
+
+RANH = RANH+TVALJ+TpsAbs;
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|400||C|O|||||||||||||||||||||O||
+REA_J|401|R�alis� annuel en jours|||||||||3|AP_CAL|J|si (PVCVARCHAR1=="O"){
+i=j=milieu_pause=topM=topS=plageM=plageS=0;
+
+
+
+tantque (i<NB_PL){
+
+ si (TAB_PL[i].NATPLAG=="P"){milieu_pause=mh((hm(TAB_PL[i].HDEB)+hm(TAB_PL[i].HFIN))/2);};
+
+ si ((TAB_PL[i].NATPLAG=="V" ou TAB_PL[i].NATPLAG=="F") et milieu_pause==0){plageM=1;};
+
+ si ((TAB_PL[i].NATPLAG=="V" ou TAB_PL[i].NATPLAG=="F") et milieu_pause!=0){plageS=1;i=NB_PL;};
+
+ i=i+1;
+
+};
+
+
+
+si (milieu_pause!=0 et plageM==1 et plageS==1){
+
+  i=0;
+
+  tantque (i<NB_PLRES){
+
+    fi_regint("X-REA_M");
+
+    j=0;
+
+    fi_regint("X-REA_S");
+
+    i=i+1;
+
+  };
+
+}sinon{
+
+ fi_regint("X-REA_J");
+
+};
+
+
+
+RANJ=RANJ+topM+topS;
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|401||C|O|||||||||||||||||||||O||
+RECUPDON|8|R�cup�ration Don|||||||||3|AV_CAL|J|DON_JR_D=DON_JR_D+VREG0;
+DON_JR_S=DON_JR_S+VREG0;|||O|N||N|Dons|O|8|1|C|O|||||||||||||||||||||O||
+REGCPF|60|M�J Droit Solde CPF|||||||||3|AV_ABS|J|CPF_D=CPF_D+hm(VREG0);
+CPF_S=CPF_S+hm(VREG0);|||O|O||N|CPF|O|60|1|C|O|||||||||||||||||||||O||
+REGCPFPS|70|M�J Pris Solde CPF|||||||||3|AV_ABS|J|CPF_P=CPF_P+hm(VREG0);
+CPF_S=CPF_S-hm(VREG0);|||O|O||N|CPF|O|70|1|C|O|||||||||||||||||||||O||
+REGFORM|60|M�J Droit Solde Formation|||||||||3|AV_ABS|J|FORM_D=FORM_D+hm(VREG0);
+FORM_S=FORM_S+hm(VREG0);|||O|N||N|FORM|O|60|1|C|O|||||||||||||||||||||O||
+REGFORMPS|70|M�J Pris Solde Formation|||||||||3|AV_ABS|J|FORM_P=FORM_P+hm(VREG0);
+FORM_S=FORM_S-hm(VREG0);|||O|O||N|FORM|O|70|1|C|O|||||||||||||||||||||O||
+REGUL|500|MODIF des COMPTEURS de BASE|||||||||3|AP_CAL|J|inccpt(NREG0,hm(VREG0));|||O|N|MODULE CHRONOPACK|N|STD|O|500|1|C|O|||||||||||||||||||||O||
+REMPSITU|500|Remplit Tableau situation|||||||||3|AV_CAL|J|si (NB_SIT==0) {
+ret=ConditionTableau("TAB_SIT", MATRIC,"long",0,deb_exercice,"date",0);
+VideTableau("TAB_SIT");
+NB_SIT=0;
+RemplitTableau("TAB_SIT", NB_SIT);
+};|||O|N||N||O|500|0|C|O|||||||||||||||||||||O||
+RESTO_MET1|150|Ticket Resto Methode 1|||||||||3|REGINT|J|
+presMatinee=tplage(debplagmat,finplagmat,"V","P", "V","F");
+presAprem=tplage(debplagaprem,finplagaprem,"V","P", "V","F");
+
+
+si (FPF1!=DPF2 et HOUV!=FPF1 et DPF2!=HFERM et JTRAV>0){
+fi_regint("ABSRESTO");
+si ((flagRestoM==0 ou presMatinee>0) et (flagRestoS==0 ou presAprem>0) et (flagRestoJ==0 ou (presMatinee>0 et presAprem>0))){TREST=1;};
+};|||O|O||N|TREST|O|150||C|N|||||||||||||||||||||N||
+RESTO_MET2|150|Ticket Resto Methode 2|||||||||3|REGINT|J|fi_regint("ABSRESTO");
+si (DT==djourmois(DT) ou DT==DSORT)
+{
+TotalCP("A",pjourmois(DT)-1,pjourmois(DT)-1,"M","ABS_TRES",absMoisPrec);
+TREST=TREST+HORTRAV_C+HORTRAV-absMoisPrec+RATTTRES_C;
+
+
+si (TREST<0){
+RATTTRES=TREST;
+RATTTRES_C=0;
+TREST=0;
+};
+};|||O|O||N|TREST|O|150||C|N|||||||||||||||||||||N||
+RESTO_MET3|150|Ticket Resto Methode 3|||||||||3|REGINT|J|si (DT==pjourmois(DT) ou DT==DENTR)
+{
+datdebrest=max(pjourmois(DT),DENTR);
+datfinrest=min(djourmois(DT),DSORT);
+datedumois=datdebrest;
+
+tantque (datedumois<=datfinrest){
+tduresto=0;
+heureouv=0;
+heureferm=0;
+finplg1=0;
+debplg2=0;
+droittickrest="";
+
+retmeth3=GE_horairej(MATRIC,datedumois, trestmet3, "MON_HOR");
+
+fi_sel("select TDU,HOUV,HCLO,FPF1,DPF2,DCVARCHAR5 into ?,?,?,?,?,? from djs where decid=?",tduresto,heureouv,heureferm,finplg1,debplg2,droittickrest,trestmet3);
+si (tduresto>0 et heureouv!=finplg1 et debplg2!=heureferm et finplg1!=debplg2 et droittickrest!="N"){TREST=TREST+1;};
+datedumois=datedumois+1;
+};
+};
+
+fi_regint("ABSRESTO");
+
+TREST=TREST-ABS_TRES;
+|||O|O||N|TREST|N|150||C|N|||||||||||||||||||||N||
+RE_CAL_CP_RT|65|Re-calcul des CP et/ou RTT|||||||||3|REGINT|J|CreeTabHist("TAB_DRT","_ctdroitcp","long","_ctpractcp","long","_ctdroitrtt","long","_ctpractrtt","long","_tauxactiv","long");
+
+
+
+si (_recalcul_cp=="O")
+
+{
+
+ LitVarTab("TAB_DRT",_deb_cp,_fin_cp);
+
+ fi_regint("NEW_CP");
+
+};
+
+si (_recalcul_rtt=="O")
+
+{
+
+ si (_deb_cp!=_deb_rtt ou _fin_cp!=_fin_rtt ou _recalcul_cp=="N") {LitVarTab("TAB_DRT",_deb_rtt,_fin_rtt);};
+
+ fi_regint("NEW_RTT");
+
+};|||O|N||N|CP RTT|O|65||C|O|||||||||||||||||||||O||
+RTTMOIS|34|Attribution Mensuelle des RTT|||||||||3|AV_CAL|J|si (CTTYPERTT=="M" et CTCALCRTT=="O")
+
+{
+
+ si (djourmois(DT)==DT)
+
+ {
+
+  si (mois(DT)==mois(DENTR) et anl(DT)==anl(DENTR))
+
+  {
+
+   RTT_D_A=((CTDROITRTT/12)*rtt_pract)*(((jour(DT)-jour(DENTR))+1)/jour(DT));
+
+  }
+
+  sinon
+
+  {
+
+   RTT_D_A=RTT_D_A+((CTDROITRTT/12)*rtt_pract);
+
+  };
+
+  RTT_S_A=RTT_S_A+RTT_D_A;
+
+ };
+
+};|||O|N|MODULE RTT|N|RTT|O|34|0|C|O|||||||||||||||||||||O||
+RTT_RAZ|37|RAZ RTT Pr�c�dents|||||||||3|AP_HOR|J|si (jour(DT)==1 et mois(DT)==CTMRAZRTT)
+
+{
+
+ RTT_D_P_C=0;
+
+ RTT_P_P_C=0;
+
+ RTT_S_P_C=0;
+
+};|||O|N|MODULE RTT|N|RTT|O|37|0|C|O|||||||||||||||||||||O||
+R_ACTCPT|1100|Alim. des compteurs activit�s|||||||||1|AP_CAL|J||||O|N||N|ACTIVITE|O|1100|0|C|O|||||||||||||||||||||O||
+R_ACTFILTR|1|Filtrage des activit�s � trait|||||||||1|AP_ACT|J||||O|N||N|ACTIVITE|O|1|0|C|N|||||||||||||||||||||N||
+R_ACTPLAGE|3|Plageage des activit�s|||||||||1|AP_CAL|J||||O|N||N|ACTIVITE|O|3|0|C|O|||||||||||||||||||||O||
+R_ACTRES|1000|R�sult. ventil�s des activit�s|||||||||1|AP_CAL|J||||O|N||N|ACTIVITE|O|1000|0|C|O|||||||||||||||||||||O||
+R_ANCVAR|2|Alimentation ancienne variable|||||||||1|AP_HOR|J||||O|N||N|STD|O|2|0|C|O|||||||||||||||||||||O||
+R_BDGDEMIJ|2|Ajustement des demi-journ�es|||||||||1|AP_BDG|J||||N|N||N|STD|O|2|0|C|N|||||||||||||||||||||N||
+R_DONPTCOM|71|M�J D/S Don de Jour|||||||||3|AV_CAL|J|DON_JR_D=DON_JR_D+VREG0;
+DON_JR_S=DON_JR_S+VREG0;|||O|O|MODULE DON|N|Dons|O|71|1|C|O|||||||||||||||||||||O||
+R_IPACK|5|Chargement var divers PACK|||||||||1|DEBUT|J||||O|O||N|STD|O|5|0|C|O|||||||||||||||||||||O||
+SPE_CHAR|1|Variables CHAR pour le CLIENT|||||||||2|DEBUT|J||||O|O||N||O|1|0|C|O|||||||||||||||||||||O||
+SPE_DATE|1|Variables DATE pour le CLIENT|||||||||2|DEBUT|J||||O|O||N||O|1|0|C|O|||||||||||||||||||||O||
+SPE_LONG|1|Variables LONG pour le CLIENT|||||||||2|DEBUT|J||||O|O||N||O|1|0|C|O|||||||||||||||||||||O||
+SPE_P01|16|Gestion spe de la date HS|||||||||3|AP_HOR|J|cal_hs="N";
+
+si (CODBAS!=NULL et CODBAS!=0 et VRAIJOUR==FINSEM)
+
+{
+
+ si (HORAIRE.NBJ_CYC>0 et HORAIRE.FCYCLE2)
+
+ {
+
+  si ((HORAIRE.NBJ_CYC%7)==0)
+
+  {
+
+   cal_hs="O"; p_nord=HORAIRE.NBJ_CYC/7;
+
+  }
+
+  sinon
+
+  {
+
+   formate _str,"multiple de 7 jours";
+
+   anom(511,99,99,_str);
+
+  };
+
+ };
+
+
+
+ si (HORAIRE.NBJ_CYC<0)
+
+ {
+
+  si ((HORAIRE.NBJ_PHO%7)==0)
+
+  {
+
+   cal_hs="O"; p_nord=HORAIRE.NBJ_PHO/7;
+
+  }
+
+  sinon
+
+  {
+
+   formate _str,"multiple de 7 jours";
+
+   anom(511,99,99,_str);
+
+  };
+
+ };
+
+};
+
+
+
+cal_hs="N";
+
+si (CODBAS!=NULL et CODBAS!=0 et VRAIJOUR==FINSEM)
+
+{
+
+ si ((HORAIRE.NBJ_PHO%7)==0)
+
+ {
+
+  cal_hs="O"; p_nord=HORAIRE.NBJ_PHO/7;
+
+ }
+
+ sinon
+
+ {
+
+  formate _str,"multiple de 7 jours";
+
+  anom(511,99,99,_str);
+
+ };
+
+};|||O|N|MODULE HS
+
+
+
+num�ro d'ordre 16
+
+
+
+Exemple 1
+
+
+
+Calcul des HS � la fin du cycle glissant et si le nombre du jour du cycle est un multiple de 7
+
+Ex. cycle 3 semaines, d�marre sur numero 2 => calcul � la fin du numero 1
+
+
+
+Il faut utiliser le m�me code que la r�gle P01 en remplacant FCYCLE1 par FCYCLE2
+
+
+
+Exemple 2
+
+
+
+Calcul des HS � la fin du cycle glissant, au jour pr�s et si le nombre du jour du cycle est un multiple de 7
+
+Ex. cycle 3 semaine, d�marre sur numero 2, le jeudi => calcul le mercredi du numero 2
+
+
+
+Il faut utiliser le m�me code que la r�gle P01 en remplacant FCYCLE1 par FCYCLE3
+
+
+
+Exemple 3
+
+
+
+Calcul des HS � la fin de chaque semaine m�me si en cycle|N|HS|N|16||C|O|||||||||||||||||||||O||
+SPE_SHOR|1|Variables SHORT pour le CLIENT|||||||||2|DEBUT|J||||O|O||N||O|1|0|C|O|||||||||||||||||||||O||
+STK_VARRTT|500|Recalcul RTT|||||||||3|REGINT|J|si(_type=="RTT"){
+si (CTCALCRTT=="N"){StockeVar("_ctdroitrtt",0);} sinon {
+ StockeVar("_ctdroitrtt",CTDROITRTT);};
+StockeVar("_ctcalcrtt",CTCALCRTT);
+ si(CTPRACTRTT=="O"){_ctpractrtt=1;}sinon{_ctpractrtt=0;};
+
+ StockeVar("_ctpractrtt",_ctpractrtt);
+
+};|||O|O||N|RTT|O|500||C|N|||||||||||||||||||||N||
+STOCKE_VAR|60|Stock var pour re-calcul CP RT|||||||||3|REGINT|J|si(_type=="CP"){
+si (CTCALCCP=="N"){StockeVar("_ctdroitcp",0);} sinon {
+ StockeVar("_ctdroitcp",CTDROITCP);};
+StockeVar("_ctcalccp",CTCALCCP);
+fi_regint("TEST");
+ StockeVar("_ctdroitcp",CTDROITCP);
+ _cppro=CTDROITCP*cp_pract;
+ si(D_CP_arrondi==0){_arrondi=ArrondiDJ(_cppro,0);};
+ si(D_CP_arrondi==1){_arrondi=ArrondiJ(_cppro,2);};
+ si(D_CP_arrondi==2){_arrondi=ArrondiJ(_cppro,1);};
+ si(D_CP_arrondi==3){_arrondi=ArrondiDJ(_cppro,2);};
+ si(jour(DT)==1 et mois(DT)==CTMBASCCP ou (_ctmaxdroitcp<_cppro et _ctmaxdroitcp>0)){
+  StockeVar("_ctmaxdroitcp",_cppro);_ctmaxdroitcp=_cppro;
+ };
+ si(CTPRACTCP=="O"){_ctpractcp=1;}sinon{_ctpractcp=0;};
+ StockeVar("_ctpractcp",_ctpractcp);
+
+};
+
+fi_regint("STK_VARRTT");
+
+StockeVar("_tauxactiv",TAUXACTIV);
+
+StockeVar("_dsort",DSORT);|||O|N|MODULE CP/RTT|N|CP RTT|O|60||C|O|||||||||||||||||||||O||
+SUPPRAP|500|Suppression AP|||||||||3|AV_ABS|J|indASuppr=0;
+doubleboucle=1;
+si (D_PRIOABS==1){
+
+tantque (indASuppr<(NB_AP-1)){
+tantque (doubleboucle<NB_AP){
+si ((TAB_AP[indASuppr].UNITEDT==TAB_AP[doubleboucle].UNITEDT et TAB_AP[doubleboucle].UNITEDT!="H") ou (TAB_AP[indASuppr].UNITEDT=="J" et TAB_AP[doubleboucle].UNITEDT!="H"))
+{fi_supprime("TAB_AP",doubleboucle);NB_AP=NB_AP-1;doubleboucle=doubleboucle-1;};
+
+doubleboucle=doubleboucle+1;
+};
+indASuppr=indASuppr+1;
+doubleboucle=indASuppr+1;
+};
+};
+|||O|N||N|TABAP|O|500||C|O|||||||||||||||||||||O||
+TABSIT|51|Tableau situation|||||||||3|DEBUT|J|ret =DeclareTableau(2, "TAB_SIT", 50 , "select distinct dsitud, dsituf, dentr, dsort, codcontrat,tauxactiv , contrata , contrata_j , OBLHEBDO , QUALIF from v_persvarct where dentr<>'31/12/1899' and matric=? and dsituf>=? order by dsitud, dsituf" , "");|||O|O||N||O|51||C|O|||||||||||||||||||||O||
+TESTJF|10|Test jour ou lendemain ferie|||||||||3|AP_HOR|J|jfe="N";
+
+lfe="N";
+
+
+
+si (JexPersDat(MATRIC,DT,1,"tab_jex")>0) {jfe="O";};
+
+si (JexPersDat(MATRIC,DT+1,1,"tab_jex")>0) { lfe="O"; };|||O|N|MODULE CHRONOPACK|N|STD|O|10||C|O|||||||||||||||||||||O||
+TICKRESTO|25|Ticket restaurant|||||||||3|AP_CAL|J|presMatinee=0;
+presAprem=0;
+absMoisPrec=0;
+debplagmat=0;
+finplagmat=0;
+debplagaprem=0;
+finplagaprem=0;
+tduresto=0;
+datdebrest=0;
+datfinrest=0;
+datedumois=0;
+debpause=0;
+finpause=0;
+
+si (HOUV<=FPF1)
+{
+debplagmat=hm(HOUV);
+finplagmat=hm(FPF1);
+}
+sinon
+{
+debplagmat=hm(HOUV);
+finplagmat=hm(FPF1+2400);
+};
+
+si (DPF2<=HFERM)
+{
+debplagaprem=hm(DPF2);
+finplagaprem=hm(HFERM);
+}
+sinon
+{
+debplagaprem=hm(DPF2);
+finplagaprem=hm(HFERM+2400);
+};
+
+debpause=hm(FPF1);
+si (FPF1<DPF2){finpause=hm(DPF2);}sinon{finpause=hm(DPF2+2400);};
+
+
+
+si (D_TICKREST>0 et PVCHAR6=="O"){
+
+si (D_TICKREST==1){si (TDU>0  et DCVARCHAR5!="N"){fi_regint("RESTO_MET1");};};
+si (D_TICKREST==2){fi_regint("RESTO_MET2");};
+si (D_TICKREST==3){fi_regint("RESTO_MET3");};
+};|||O|N||N|TREST|O|25||C|O|||||||||||||||||||||N||
+TMPSVEST|46|Temps vestiaire: V�rification|||||||||3|REGINT|J|si(TAB_PT[bouclpt].ES=="E" ou TAB_PT[bouclpt].ES=="e"){
+ si(heureBdg<=HOUV et D_PRISVEST<=0){
+  flagVestiaire=1;
+ };
+ si(heureBdg>=HOUV et D_PRISVEST>=0){
+  flagVestiaire=1;
+ };
+};
+si(TAB_PT[bouclpt].ES=="S" ou TAB_PT[bouclpt].ES=="s"){
+ heureBdgS=HFERM;
+ si(HORNUIT=="O"){
+  heureBdgS=heureBdgS+2400;
+ }; 
+ si(heureBdg>=heureBdgS et D_PRISVEST<=0){
+  flagVestiaire=1;
+ };
+ si(heureBdg>=heureBdgS et D_PRISVEST>=0){
+  flagVestiaire=1;
+ };
+};|||N|N||N|VEST|O|46||C|N|||||||||||||||||||||N||
+TPSVEST12|50|Temps vestiaire/habillage|||||||||3|AP_BDG|J|bouclpt=0;
+heureBdgS=0;
+heureBdg=0;
+flagVestiaire=0;
+tpsVestiaire=0;
+
+
+si(NB_PT>0 et DCVARINT4!=NULL){
+tantque(bouclpt<NB_PT){
+flagVestiaire=0;
+ heureBdg=(TAB_PT[bouclpt].HEURE*100)+TAB_PT[bouclpt].MINUT;
+ si(TAB_PT[bouclpt].DAT>DT){
+  heureBdg=heureBdg+2400;
+ };
+ 
+ si(D_TYPVEST>=0 et (TAB_PT[bouclpt].RANG=="I" et (TAB_PT[bouclpt].ES=="E" ou TAB_PT[bouclpt].ES=="S"))){
+  fi_regint("TMPSVEST");
+ };
+
+ si(D_TYPVEST<=0 et (TAB_PT[bouclpt].RANG!=NULL et (TAB_PT[bouclpt].ES=="e" ou TAB_PT[bouclpt].ES=="s"))){
+  fi_regint("TMPSVEST");
+ };
+
+ si(flagVestiaire==1){
+   tpsVestiaire=tpsVestiaire+hm(DCVARINT4);
+ };
+
+bouclpt=bouclpt+1;
+};
+};|||O|N|  fi_stredit(TAB_PT[bouclpt].ES,1);|N|VEST|O|50||C|O|||||||||||||||||||||N||
+V-ANNI|80|D�claration des variables ANNI|||||||||3|DEBUT|J|long AnnNb;
+
+long VAnni;
+
+short DatAcquisAnn;|||O|O|MODULE ANNI|N|ANNI|O|80|0|C|O|||||||||||||||||||||O||
+V-CANC|85|D�claration des variables CANC|||||||||3|DEBUT|J|long VAnc;
+short DatAcquisAnc;|||O|O|MODULE CANC|N|ANC|O|85||C|O|||||||||||||||||||||O||
+V-CET|105|Declaration variables CET|||||||||3|DEBUT|J|long CetNb;|||O|O|MODULE CET|N|CET|O|105|0|C|O|||||||||||||||||||||O||
+V-CP|50|D�claration des variables CP|||||||||3|DEBUT|J|double cp_pract;
+
+char CpAbs(1);
+
+
+
+date _deb_cp;
+
+date _fin_cp;|||O|O|MODULE CP|N|CP|O|50||C|O|||||||||||||||||||||O||
+V-CPATER|95|D�claration Cong� Paternit�|||||||||3|DEBUT|J|short PAT_NbNais;
+
+date PAT_DateMax;
+
+date PAT_DateMin;|||O|O|MODULE CPAT|N|PATERNI|O|95||C|O|||||||||||||||||||||O||
+V-CURS|60|Variables pour recalcul CP/RTT|||||||||3|DEBUT|J|char _recalcul_cp(1);
+
+char _recalcul_rtt(1);
+
+
+
+long _drt_cp;
+
+long _drt_rtt;
+
+double _val;
+
+double _pract;
+
+
+
+char _type(3);
+
+
+
+long _ctdroitcp;
+
+long _ctmaxdroitcp;
+
+long _ctpractcp;
+
+long _ctdroitrtt;
+
+long _ctpractrtt;
+
+long _tauxactiv;
+
+char _ctcalcrtt(1);
+
+char _ctcalccp(1);
+
+
+date _dsort;
+
+long _cppro;
+
+short _nbjan;|||O|O|MODULE CP/RTT|N|CP RTT|O|60||C|O|||||||||||||||||||||O||
+V-EN_MA|90|D�claration Enfant Malade|||||||||3|DEBUT|J|short Vnbenf;
+
+double em_pract;
+long Droit_EM;
+
+date EM_Date;
+date Vdnaisenf;
+
+char Vcharge(1);
+char Vhandicap(1);
+long Vnbenfhier;|||O|O|MODULE EM|N|ENF MALA|O|90||C|O|||||||||||||||||||||O||
+V-HS|110|D�claration des variables HS|||||||||3|DEBUT|J|long VPCALHS;
+
+long RegHsaRec;
+
+long _debhs;
+
+long _finhs;
+
+long _hs;
+
+
+
+short CP_HS;
+
+short p_nord;
+
+
+
+char inst_hs(400);
+
+char PK_cal_hs(1);|||O|O|MODULE HS|N|HS|O|110||C|O|||||||||||||||||||||O||
+V-RTT|55|D�claration des variables RTT|||||||||3|DEBUT|J|double rtt_pract;
+
+char RttAbs(1);
+
+date _deb_rtt;
+
+date _fin_rtt;|||O|O|MODULE RTT|N|RTT|O|55||C|O|||||||||||||||||||||O||
+VARABSHOR|55|D�claration variables abs hor|||||||||3|DEBUT|J|short abshorMS;|||O|O||N|ABSHOR|O|55||C|O|||||||||||||||||||||O||
+VENTILHS|504|Ventilation des HS|||||||||3|AP_CAL|J|HS2550=HS125+HS150+NTEPA125+NTEPA150;
+
+RegHsaRec=hm(VREG0);
+
+
+
+si (RegHsaRec>HS2550 ou RegHsaRec<0)
+
+{
+
+ formate _str,"Valeur maxi : ",mh(HS2550) using "-##&h&&m";
+
+ anom(509,99,99,_str);
+
+}
+
+sinon
+
+{
+
+ TYPE_ANO[501]="I";
+
+ si (RegHsaRec==0)
+
+ {
+
+  HS125P=HS125;
+
+  HS150P=HS150;
+
+  NT125P=NTEPA125;
+
+  NT150P=NTEPA150;
+
+ };
+
+ si (RegHsaRec<=HS150)
+
+ {
+
+  RHS_D=RegHsaRec*150/100;
+
+  RHS_S=RHS_D;
+
+  HS125P=HS125;
+
+  HS150P=HS150-RegHsaRec;
+
+ };
+
+ si (RegHsaRec>HS150)
+
+ {
+
+  si ((RegHsaRec-HS150)<=HS125)
+
+  {
+
+   RHS_D=(HS150*150/100)+((RegHsaRec-HS150)*125/100);
+
+   RHS_S=RHS_D;
+
+   HS125P=HS125-(RegHsaRec-HS150);
+
+   HS150P=0;
+
+  };
+
+  si ((RegHsaRec-HS150)>HS125)
+
+  {
+
+   fi_regint("X-VENTILHS");
+
+  };
+
+ };
+
+ DEBCRE=DEBCRE-HS2550;
+
+ CONTAHS=CONTAHS-RegHsaRec;
+
+};|||O|N|MODULE HS|N|HS|O|504|1|C|O|||||||||||||||||||||O||
+V_CFRAC|75|D�claration des variables CFRA|||||||||3|DEBUT|J|double fra_pract;
+
+short CPbasc;|||O|O|MODULE CFRAC|N|FRACT|O|75|0|C|O|||||||||||||||||||||O||
+V_JEX|115|D�claration struct jour except|||||||||3|DEBUT|J|ret=JexInit("tab_jex");|||O|O||N|STD|O||0|C|O|||||||varint1||||||||||||||O||
+X-REA_J|401|R�alis� annuel 1plage|||||||||3|REGINT|J|i=j=0;
+
+tantque (i<NB_PLRES){
+
+  si (topM==0 et topS==0 et TAB_PLRES[i].ACTVID=="P"){topM=100;};
+
+  si (topM==0 et topS==0 et TAB_PLRES[i].ACTVID=="A" ou TAB_PLRES[i].ACTVID=="M"){
+
+    tantque (j<NB_AP) {
+
+      si (TAB_AP[j].VALJAN!="0" et TAB_PLRES[i]._AACTID==TAB_AP[j].ABSID){topM=100;j=NB_AP;};
+
+      j=j+1;
+
+    };
+
+  };
+
+  i=i+1;
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O|401|0|C|O|||||||||||||||||||||O||
+X-REA_M|401|R�alis� annuel matin|||||||||3|REGINT|J|si (TAB_PLRES[i].HDEBPL<=milieu_pause et TAB_PLRES[i].HFINPL>=HOUV et topM==0){
+
+   si (TAB_PLRES[i].ACTVID=="P"){topM=50;};
+
+   si (TAB_PLRES[i].ACTVID=="A"  ou TAB_PLRES[i].ACTVID=="M"){
+
+     tantque (j<NB_AP) {
+
+       si (TAB_AP[j].VALJAN!="0" et TAB_PLRES[i]._AACTID==TAB_AP[j].ABSID){
+
+         si (TAB_AP[j].UNITEDT=="J" ou TAB_AP[j].TEMPS>=TDU){topM=100;j=NB_AP}sinon{topM=50;j=NB_AP;};
+
+       };
+
+       j=j+1;
+
+     };
+
+   };
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O||0|C|O|||||||||||||||||||||O||
+X-REA_S|401|R�alis� annuel soir|||||||||3|REGINT|J|si (TAB_PLRES[i].HDEBPL<=HFERM et TAB_PLRES[i].HFINPL>=milieu_pause et topS==0 et topM<100){
+
+  si (TAB_PLRES[i].ACTVID=="P") {topS=50;};
+
+  si (TAB_PLRES[i].ACTVID=="A"  ou TAB_PLRES[i].ACTVID=="M"){
+
+    tantque (j<NB_AP) {
+
+      si (TAB_AP[j].VALJAN!="0" et TAB_PLRES[i]._AACTID==TAB_AP[j].ABSID){topS=50;j=NB_AP;};
+
+      j=j+1;
+
+    };
+
+  };
+
+};|||O|N|SUIVI ANNUALISATION|N|ANNU|O||0|C|O|||||||||||||||||||||O||
+X-VENTILHS|40|suite Ventilation des HS|||||||||3|REGINT|J|si (RegHsaRec-(HS150+HS125)<=NTEPA150)
+
+{
+
+ RHS_D=(HS150*150/100)+(HS125*125/100)+((RegHsaRec-(HS150+HS125))*150/100);
+
+ RHS_S=RHS_D;
+
+ NT150P=NTEPA150-(RegHsaRec-(HS150+HS125));
+
+ HS150P=HS125P=0;
+
+};
+
+si (RegHsaRec-(HS150+HS125)>NTEPA150)
+
+{
+
+ RHS_D=(HS150*150/100)+(HS125*125/100)+(NTEPA150*150/100)+((RegHsaRec-(HS150+HS125+NTEPA150))*125/100);
+
+ RHS_S=RHS_D;
+
+ NT125P=NTEPA125-(RegHsaRec-(HS150+HS125+NTEPA150));
+
+ HS150P=HS125P=NT150P=0;
+
+};|||O|N|MODULE HS|N|HS|O|40||C|O|||||||||||||||||||||O||
+X_516|901|Anomalie si repos < 11h cons.|||||||||3|REGINT|J|formate ano516,"Repos quotidien < � ",D_REPQUOT  using "---#&h&&m";
+si(FIN_PRES_C!=hm(2400))
+{
+  _reposQuotidien=mh(hm(2400)-FIN_PRES_C+hm(_deb_pres));
+  si(_reposQuotidien<D_REPQUOT) {anom(516,99,99,ano516);NRESPRQ=1;};
+};|||O|N||N|TRREP|O|901||C|O|||||||||||||||||||||O||
+X_517|902|Anomalie si amplit. trav. >12h|||||||||3|REGINT|J|si(NB_PT>0)
+{_first_bdg=_last_bdg=-1;
+  br=0;
+  tantque(br<NB_PT)
+  {si(TAB_PT[br].ES=="E" ou TAB_PT[br].ES=="e") {_first_bdg=TAB_PT[br].HEURE*100+TAB_PT[br].MINUT;br=NB_PT;};
+    br=br+1;
+  };
+  br=NB_PT-1;
+  tantque(br>0)
+  {si(TAB_PT[br].ES=="S" ou TAB_PT[br].ES=="s") {_last_bdg=TAB_PT[br].HEURE*100+TAB_PT[br].MINUT;br=0;};
+    br=br-1;
+  };
+  _amplitude=mh(hm(_last_bdg)-hm(_first_bdg));
+  si(_first_bdg!=-1 et _last_bdg!=-1 et _amplitude>1200) {anom(517,99,99,ano517);DEPAMPLJ=1;};
+};|||O|N||N|TRREP|O|902||C|O|||||||||||||||||||||O||
+mission|5|Absence mission|||||||||1|TS_ABS|J||||O|N|STD|N|MISSION|O|5|2|C|O|||||||||||||||||||||O||
